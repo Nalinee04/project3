@@ -1,14 +1,14 @@
+// นำเข้าเฉพาะคอมโพเนนต์ที่จำเป็น ไม่ต้องนำเข้า Header ซ้ำ
 import Content from "../components/Content";
 import Footer from "../components/Footer";
-import Header from "../components/Header";
 import PaginationPage from "../components/Pagination";
 
 const HomePage = () => {
   return (
-    <>
-      <Content></Content>
-      <PaginationPage></PaginationPage>
-    </>
+    <div>
+      <Content />
+      <PaginationPage />
+    </div>
   );
 };
 

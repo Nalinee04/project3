@@ -6,7 +6,7 @@ const Footer = () => {
     <footer className=" py-8">
       <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
         <div className="mb-6 md:mb-0">
-          <h2 className="text-lg font-bold">Company Name</h2>
+          <h2 className="text-lg font-bold">Food Thai</h2>
           <p className="text-sm">© 2024 All rights reserved.</p>
         </div>
 

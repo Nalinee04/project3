@@ -1,3 +1,6 @@
+"use client";
+
+import { useRouter } from "next/navigation"; // ใช้ useRouter จาก next/navigation
 import { CircleUser, Menu, Search, Package2 } from "lucide-react";
 import Link from "next/link";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -15,91 +18,75 @@ import { ModeToggle } from "./ModeToggle";
 import Cart from "./Cart";
 
 const Header = () => {
+  const router = useRouter(); // ใช้ useRouter จาก next/navigation
+
+  // ฟังก์ชันสำหรับการออกจากระบบ
+  const handleLogout = () => {
+    // ลบข้อมูลการเข้าสู่ระบบออกจาก localStorage หรือ sessionStorage
+    localStorage.removeItem("user");
+
+    // เปลี่ยนเส้นทางไปยังหน้า login
+    router.push("/login");
+  };
+
   return (
-    <header className=" top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 ">
-      <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
-        <Link
-          href="/home"
-          className="flex items-center gap-2 text-1xl font-semibold md:text-xl text-nowrap"
-        >
-          Name of business
+    <header className="top-0 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
+      {/* ส่วนของโลโก้และเมนู */}
+      <nav className="flex items-center gap-4 text-lg font-medium">
+        <Link href="/home" className="text-xl font-semibold">
+          FOOD THAI
         </Link>
-        <Link
-          href="/home"
-          className="text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Home
+        <Link href="/home" className="text-muted-foreground transition-colors hover:text-foreground">
+          หน้าแรก
         </Link>
-        <Link
-          href="/categories"
-          className="text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Categories
-          <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="secondary" size="icon" className="rounded-full">
-              <CircleUser className="h-5 w-5" />
-              <span className="sr-only">Toggle user menu</span>
-            </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger className="text-muted-foreground transition-colors hover:text-foreground">
+            ประเภทสินค้า
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Categories</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem><Link href={'/tea'} >Sign in</Link></DropdownMenuItem>
-            <DropdownMenuItem><Link href={'/juice'} >Sign up</Link></DropdownMenuItem>
-            
+          <DropdownMenuContent>
+            <DropdownMenuItem>ชา</DropdownMenuItem>
+            <DropdownMenuItem>น้ำผลไม้</DropdownMenuItem>
+            <DropdownMenuItem>เค้ก</DropdownMenuItem>
+            <DropdownMenuItem>อาหารตามสั่ง</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        </Link>
       </nav>
+
+      {/* เมนูแบบพับเก็บได้สำหรับหน้าจอเล็ก */}
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="shrink-0 md:hidden">
+          <Button variant="outline" size="icon" className="md:hidden">
             <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle navigation menu</span>
           </Button>
         </SheetTrigger>
         <SheetContent side="left">
-          <nav className="grid gap-6 text-lg font-medium">
-            <Link
-              href="#"
-              className="flex items-center gap-2 text-lg font-semibold"
-            >
+          <nav className="grid gap-6 text-lg font-light">
+            <Link href="#" className="text-lg font-semibold">
               <Package2 className="h-6 w-6" />
-              <span className="sr-only">Acme Inc</span>
             </Link>
-            <Link
-              href="#"
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Dashboard
+            <Link href="/home" className="text-muted-foreground transition-colors hover:text-foreground text-base font-normal">
+              หน้าแรก
             </Link>
-            <Link
-              href="#"
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Orders
+            <Link href="#" className="text-muted-foreground hover:text-foreground">
+              สินค้า
             </Link>
-            <Link
-              href="#"
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Products
+            <Link href="#" className="text-muted-foreground hover:text-foreground">
+              ประเภท
             </Link>
-            <Link
-              href="#"
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Customers
+            <Link href="#" className="text-muted-foreground hover:text-foreground">
+              คำสั่งซื้อของฉัน
             </Link>
-            <Link href="#" className="hover:text-foreground">
-              Settings
-            </Link>
+            <button onClick={handleLogout} className="hover:text-foreground">
+              ออกจากระบบ
+            </button>
           </nav>
         </SheetContent>
       </Sheet>
-      <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-        <form className="ml-auto flex-1 sm:flex-initial">
+
+      {/* ส่วนของช่องค้นหา, ตะกร้า, การตั้งค่าโหมดแสง และเมนูผู้ใช้ */}
+      <div className="flex items-center gap-4">
+        <form className="ml-auto flex-1">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -121,9 +108,13 @@ const Header = () => {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem><Link href={'/login'} >Sign in</Link></DropdownMenuItem>
-            <DropdownMenuItem><Link href={'/register'} >Sign up</Link></DropdownMenuItem>
-            
+            <DropdownMenuItem>
+              <Link href="/dashboard">แดชบอร์ด</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Link href="/Edit">แก้ไขโปรไฟล์ของคุณ</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>ออกจากระบบ</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
