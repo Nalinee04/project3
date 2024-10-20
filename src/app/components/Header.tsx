@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation"; // ใช้ useRouter จาก next/navigation
-import { CircleUser, Menu, Search, Package2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CircleUser, Menu, Search, Package2, History, Globe } from "lucide-react"; // เพิ่มไอคอน History และ Globe
 import Link from "next/link";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -18,41 +18,24 @@ import { ModeToggle } from "./ModeToggle";
 import Cart from "./Cart";
 
 const Header = () => {
-  const router = useRouter(); // ใช้ useRouter จาก next/navigation
+  const router = useRouter();
 
-  // ฟังก์ชันสำหรับการออกจากระบบ
   const handleLogout = () => {
-    // ลบข้อมูลการเข้าสู่ระบบออกจาก localStorage หรือ sessionStorage
     localStorage.removeItem("user");
-
-    // เปลี่ยนเส้นทางไปยังหน้า login
     router.push("/login");
   };
 
   return (
-    <header className="top-0 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
-      {/* ส่วนของโลโก้และเมนู */}
-      <nav className="flex items-center gap-4 text-lg font-medium">
+    <header className="flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
+      <nav className="flex items-center gap-6 text-lg font-medium">
         <Link href="/home" className="text-xl font-semibold">
           FOOD THAI
         </Link>
         <Link href="/home" className="text-muted-foreground transition-colors hover:text-foreground">
           หน้าแรก
         </Link>
-        <DropdownMenu>
-          <DropdownMenuTrigger className="text-muted-foreground transition-colors hover:text-foreground">
-            ประเภทสินค้า
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem>ชา</DropdownMenuItem>
-            <DropdownMenuItem>น้ำผลไม้</DropdownMenuItem>
-            <DropdownMenuItem>เค้ก</DropdownMenuItem>
-            <DropdownMenuItem>อาหารตามสั่ง</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </nav>
 
-      {/* เมนูแบบพับเก็บได้สำหรับหน้าจอเล็ก */}
       <Sheet>
         <SheetTrigger asChild>
           <Button variant="outline" size="icon" className="md:hidden">
@@ -84,7 +67,6 @@ const Header = () => {
         </SheetContent>
       </Sheet>
 
-      {/* ส่วนของช่องค้นหา, ตะกร้า, การตั้งค่าโหมดแสง และเมนูผู้ใช้ */}
       <div className="flex items-center gap-4">
         <form className="ml-auto flex-1">
           <div className="relative">
@@ -96,8 +78,17 @@ const Header = () => {
             />
           </div>
         </form>
+
+        <Link href="/history">
+          <Button variant="outline" size="icon" className="rounded-full">
+            <History className="h-5 w-5" />
+            <span className="sr-only">History</span>
+          </Button>
+        </Link>
+
         <Cart />
         <ModeToggle />
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" size="icon" className="rounded-full">
@@ -109,10 +100,7 @@ const Header = () => {
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <Link href="/dashboard">แดชบอร์ด</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Link href="/Edit">แก้ไขโปรไฟล์ของคุณ</Link>
+              <Link href="/editprofile">แก้ไขโปรไฟล์ของคุณ</Link>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout}>ออกจากระบบ</DropdownMenuItem>
           </DropdownMenuContent>

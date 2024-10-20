@@ -1,4 +1,4 @@
-"use client"; // เพิ่มบรรทัดนี้ที่ด้านบนสุดของไฟล์
+"use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 

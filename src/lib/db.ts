@@ -1,5 +1,4 @@
-// src/lib/db.ts
-import mysql from 'mysql2/promise';
+import mysql, { RowDataPacket } from 'mysql2/promise';
 
 const connection = mysql.createPool({
   host: 'localhost',
@@ -14,7 +13,7 @@ const connection = mysql.createPool({
 // ฟังก์ชันทดสอบการเชื่อมต่อ
 async function testConnection() {
   try {
-    const [rows] = await connection.query('SELECT 1 + 1 AS solution');
+    const [rows]: [RowDataPacket[], any] = await connection.query('SELECT 1 + 1 AS solution'); // ระบุประเภทของ rows
     console.log('Test query result:', rows[0].solution); // ควรแสดง "2"
   } catch (error) {
     console.error('Error executing test query:', error);

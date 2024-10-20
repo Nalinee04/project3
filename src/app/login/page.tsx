@@ -1,158 +1,175 @@
-"use client"; // เพิ่มเพื่อใช้ Client Component ใน Next.js 13+
+// app/login/page.tsx
+"use client";
 
-import { useState } from "react"; // ใช้ useState เพื่อจัดการสถานะของการแสดง/ซ่อนรหัสผ่าน
-import { useRouter } from "next/navigation"; // นำเข้า useRouter เพื่อใช้ในการนำทาง
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import Image from "next/image"; // สำหรับแสดงรูปภาพ
-import { Eye, EyeOff, Mail, Lock } from "lucide-react"; // นำเข้าไอคอนจากไลบรารี lucide-react
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCircleUser, faLock } from "@fortawesome/free-solid-svg-icons";
+import { toast } from "@/hooks/use-toast";
+import { useUser } from "../components/Usercontext";
 
 const LoginPage = () => {
-  const [showPassword, setShowPassword] = useState(false); // สถานะการแสดง/ซ่อนรหัสผ่าน
-  const [email, setEmail] = useState(""); // สถานะสำหรับอีเมล
-  const [password, setPassword] = useState(""); // สถานะสำหรับรหัสผ่าน
-  const router = useRouter(); // ใช้ useRouter เพื่อทำการนำทางหลังจากล็อกอินสำเร็จ
+  const [showPassword, setShowPassword] = useState(false);
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const router = useRouter();
+  const { setUser, setToken } = useUser();
 
-  // ฟังก์ชันเพื่อสลับการแสดง/ซ่อนรหัสผ่าน
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
-  // ฟังก์ชันเพื่อจัดการการส่งฟอร์ม
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log("Logging in with:", identifier, password);
+
     try {
       const response = await fetch("/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ identifier, password }),
       });
 
-      // ตรวจสอบสถานะของการตอบกลับก่อนที่จะเรียก response.json()
-      console.log('Response status:', response.status); // ตรวจสอบสถานะของการตอบกลับ
-      console.log('Response OK:', response.ok); // ตรวจสอบว่า response.ok เป็น true หรือไม่
-
       if (!response.ok) {
-        let errorMessage = 'Login failed';
-        // ตรวจสอบว่า response เป็น JSON ก่อนที่จะเรียก response.json()
-        try {
-          const errorData = await response.json();
-          console.log('Error Data:', errorData); // แสดงข้อมูลของข้อผิดพลาด
-          errorMessage = errorData.error || errorMessage;
-        } catch (jsonError) {
-          // ถ้าไม่สามารถแปลง response เป็น JSON ได้
-          throw new Error('Server did not return JSON');
-        }
-        throw new Error(errorMessage);
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Login failed");
       }
 
-      // ถ้าการตอบกลับโอเค ให้แปลงเป็น JSON
       const data = await response.json();
-      console.log('Login Successful Data:', data); // แสดงข้อมูลที่ได้จาก API
-      alert("Login successful");
+      console.log("Login response data:", data);
 
-      // นำทางไปยังหน้า home
-      router.push('/home'); // เปลี่ยนเส้นทางไปยังหน้า home หลังจากล็อกอินสำเร็จ
+      // เก็บข้อมูลผู้ใช้และ token ใน context
+      setUser(data.user); // เก็บข้อมูลผู้ใช้ใน context
+      setToken(data.token); // เก็บ JWT token ใน context
 
+      // เก็บ JWT token ใน localStorage
+      localStorage.setItem("user", JSON.stringify(data.user)); // เก็บข้อมูลผู้ใช้
+      localStorage.setItem("token", data.token); // เก็บ JWT token
+
+      toast({
+        title: "Login successfully",
+        description: "คุณเข้าสู่ระบบเรียบร้อยแล้ว",
+      });
+      router.push("/home"); // เปลี่ยนเส้นทางไปยังหน้า home
     } catch (error) {
-      console.log('Error:', error.message); // แสดงข้อผิดพลาดที่เกิดขึ้น
-      alert("An error occurred: " + error.message);
+      if (error instanceof Error) {
+        console.error("Login error:", error.message);
+        toast({
+          title: "Login failed",
+          description: error.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ",
+        });
+      } else {
+        console.error("Unexpected error:", error);
+        toast({
+          title: "Login failed",
+          description: "เกิดข้อผิดพลาดในการเข้าสู่ระบบ",
+        });
+      }
     }
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
-      <div className="max-w-4xl w-full bg-white rounded-lg shadow-md overflow-hidden flex">
-        {/* ส่วนแสดงโลโก้ด้านซ้าย */}
-        <div className="w-1/2 p-4 flex justify-center items-center bg-#252525">
+    <div
+      className="flex justify-center items-center min-h-screen p-4"
+      style={{ backgroundColor: "#1E1E1E" }}
+    >
+      <div className="w-[1100px] h-[600px] bg-white rounded-lg shadow-md flex">
+        {/* ฟอร์มล็อกอินด้านซ้าย */}
+        <div className="w-1/2 p-4 flex justify-start items-center">
           <Image
-            src="/images/logo.png" // แก้ไขเป็นเส้นทางของรูปโลโก้ของคุณ
+            src="/images/logo.png"
             alt="Shop Logo"
-            width={750}
-            height={750}
-            className="object-contain"
+            width={500}
+            height={500}
+            className="object-contain ml-6"
           />
         </div>
 
-        {/* ส่วนฟอร์มล็อกอินด้านขวา */}
-        <div className="w-1/2 p-8">
-          <Card className="w-full">
-            <CardHeader className="flex flex-col items-center">
-              <Image
-                src="/images/logo food.png" // แก้ไขเป็นเส้นทางของรูปไอคอนผู้ใช้ของคุณ
-                alt="User Icon"
-                width={80}
-                height={80}
-                className="mb-4"
+        {/* ฟอร์มล็อกอินด้านขวา */}
+        <div className="w-1/2 p-2 flex flex-col items-center -ml-4">
+          <Image
+            src="/images/logo food.png"
+            alt="User Icon"
+            width={250}
+            height={250}
+            className="mb-6"
+          />
+
+          <form onSubmit={handleSubmit} className="w-full">
+            {/* ฟิลด์สำหรับกรอกชื่อผู้ใช้หรืออีเมล */}
+            <div className="relative mt-1">
+              <FontAwesomeIcon
+                icon={faCircleUser}
+                className="w-[10%] h-[30px] text-gray-500 absolute left-2 top-2.5 ml-6"
               />
-              <CardTitle>เข้าสู่ระบบ</CardTitle>
-              <CardDescription>กรุณากรอกอีเมลและรหัสผ่านเพื่อเข้าสู่ระบบ</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* ฟอร์ม */}
-              <form onSubmit={handleSubmit}>
-                {/* ฟิลด์อีเมล */}
-                <div className="relative mt-4">
-                  <p className="mb-2">อีเมล</p>
-                  <Input
-                    type="email"
-                    placeholder="อีเมล"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                  />
-                  <Mail className="absolute left-3 top-9 h-5 w-5 text-gray-400" /> {/* ไอคอนอีเมล */}
-                </div>
+              <input
+                type="text"
+                placeholder="Username or Email"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                className="w-[90%] h-[50px] pl-14 p-3 border border-gray-300 rounded-lg mb-4 ml-8 text-2xl"
+              />
+            </div>
 
-                {/* ฟิลด์รหัสผ่าน */}
-                <div className="relative mt-4">
-                  <p className="mb-2">รหัสผ่าน</p>
-                  <Input
-                    type={showPassword ? "text" : "password"} // เปลี่ยนประเภทของ input ตามสถานะ
-                    placeholder="รหัสผ่าน"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10"
-                  />
-                  <Lock className="absolute left-3 top-9 h-5 w-5 text-gray-400" /> {/* ไอคอนกุญแจ */}
-                  <button
-                    type="button"
-                    onClick={togglePasswordVisibility}
-                    className="absolute right-3 top-9"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400" /> // ไอคอนตาถ้ารหัสผ่านแสดงอยู่
-                    ) : (
-                      <Eye className="h-5 w-5 text-gray-400" /> // ไอคอนตาถ้ารหัสผ่านซ่อนอยู่
-                    )}
-                  </button>
-                </div>
-
-                <Button type="submit" className="mt-6 w-full">
-                  เข้าสู่ระบบ
-                </Button>
-              </form>
-            </CardContent>
-            <CardFooter className="flex justify-center">
-              <Link
-                className="text-blue-300 underline text-sm hover:text-blue-700"
-                href={"/register"}
+            {/* ฟิลด์รหัสผ่าน */}
+            <div className="relative mt-4">
+              <FontAwesomeIcon
+                icon={faLock}
+                className="w-[10%] h-[30px] text-gray-500 absolute left-2 top-2.5 ml-6"
+              />
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pl-14 w-[90%] h-[50px] p-3 border border-gray-300 rounded-lg mb-4 ml-8 text-2xl"
+              />
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                className="absolute right-7 top-3"
               >
-                ยังไม่มีบัญชีใช่มั้ย? สมัครสมาชิกเลย
-              </Link>
-            </CardFooter>
-          </Card>
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <Eye className="h-5 w-5 text-gray-500" />
+                )}
+              </button>
+            </div>
+
+            <div className="flex justify-center">
+              <Button
+                type="submit"
+                className="mt-9  rounded-xl w-[480px] h-[50px] text-2xl -ml-4"
+              >
+                เข้าสู่ระบบ
+              </Button>
+            </div>
+          </form>
+
+          {/* ลิงค์สำหรับรีเซ็ตรหัสผ่าน */}
+          <Link
+            href="/forgotpassword"
+            className="text-red-500 underline text-lg hover:text-red-700 mt-4"
+          >
+            ลืมรหัสผ่าน?
+          </Link>
+
+          <div className="flex justify-center mt-4">
+            <span className="text-black text-lg">ยังไม่มีบัญชีใช่มั้ย?</span>
+            <Link
+              className="text-blue-500 underline text-lg hover:text-blue-700 ml-2"
+              href={"/register"}
+            >
+              สมัครสมาชิกเลย
+            </Link>
+          </div>
         </div>
       </div>
     </div>
