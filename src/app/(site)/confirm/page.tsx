@@ -255,12 +255,15 @@ const ConfirmationPage = () => {
   };
 
   const handleWeatherCheck = (isRain: boolean) => {
+    setIsRaining(isRain);
+    console.log("Updated isRaining:", isRain); // Log the updated value of isRaining
     if (isRain) {
-      console.log("ขณะนี้มีฝนตก");
+        console.log("ขณะนี้มีฝนตก");
     } else {
-      console.log("ขณะนี้ไม่มีฝนตก");
+        console.log("ขณะนี้ไม่มีฝนตก");
     }
-  };
+};
+
 
   return (
     <div className="container mx-auto p-6 bg-gray-50 min-h-screen">
