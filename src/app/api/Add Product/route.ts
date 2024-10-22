@@ -1,46 +1,43 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import db from '@/lib/db'; // ตรวจสอบว่าการเชื่อมต่อฐานข้อมูลในไฟล์นี้ถูกตั้งค่าอย่างถูกต้อง
+import { NextRequest, NextResponse } from 'next/server';
+import db from '@/lib/db'; // การเชื่อมต่อฐานข้อมูล
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method === 'POST') {
-    const { productName, description, price, imageUrl } = req.body;
+// ฟังก์ชันสำหรับเพิ่มสินค้า (POST)
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { productName, description, price, imageUrl } = body;
 
-    // ตรวจสอบว่ามีการกรอกข้อมูลที่จำเป็นหรือไม่
+    // ตรวจสอบข้อมูลที่จำเป็น
     if (!productName || !price) {
-      return res.status(400).json({ error: 'กรุณากรอกชื่อสินค้าและราคา' });
+      return NextResponse.json({ error: 'กรุณากรอกชื่อสินค้าและราคา' }, { status: 400 });
     }
 
     console.log('Data received for product:', { productName, description, price, imageUrl });
 
-    try {
-      // ตรวจสอบการเชื่อมต่อฐานข้อมูลและตรวจสอบรูปแบบของคำสั่ง SQL
-      const result = await db.query(
-        'INSERT INTO products (title, description, price, image_url) VALUES (?, ?, ?, ?)',
-        [productName, description, price, imageUrl]
-      );
+    // เพิ่มข้อมูลสินค้าในฐานข้อมูล
+    const result = await db.query(
+      'INSERT INTO products (title, description, price, image_url) VALUES (?, ?, ?, ?)',
+      [productName, description, price, imageUrl]
+    );
 
-      console.log('Database response:', result);
+    console.log('Database response:', result);
+    return NextResponse.json({ message: 'เพิ่มสินค้าสำเร็จ' }, { status: 200 });
+  } catch (error) {
+    console.error('Error adding product:', error);
+    return NextResponse.json({ error: 'เกิดข้อผิดพลาดในการเพิ่มสินค้า' }, { status: 500 });
+  }
+}
 
-      res.status(200).json({ message: 'เพิ่มสินค้าสำเร็จ' });
-    } catch (error) {
-      console.error('Error adding product:', error);
-      res.status(500).json({ error: 'เกิดข้อผิดพลาดในการเพิ่มสินค้า' });
-    }
+// ฟังก์ชันสำหรับดึงข้อมูลสินค้า (GET)
+export async function GET() {
+  try {
+    console.log('Fetching products from database...');
+    const [rows] = await db.query('SELECT * FROM products');
 
-  } else if (req.method === 'GET') {
-    try {
-      console.log('Fetching products from database...');
-      
-      const [rows] = await db.query('SELECT * FROM products');
-
-      console.log('Products fetched:', rows);
-
-      res.status(200).json(rows);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      res.status(500).json({ error: 'เกิดข้อผิดพลาดในการดึงข้อมูลสินค้า' });
-    }
-  } else {
-    res.status(405).json({ error: 'ไม่อนุญาตให้ใช้วิธีนี้' });
+    console.log('Products fetched:', rows);
+    return NextResponse.json(rows, { status: 200 });
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return NextResponse.json({ error: 'เกิดข้อผิดพลาดในการดึงข้อมูลสินค้า' }, { status: 500 });
   }
 }

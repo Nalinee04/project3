@@ -7,7 +7,7 @@ interface ProgressBarProps {
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = ({ currentStep }) => {
-  const steps = ['รอดำเนินการ', 'เตรียมของจัดส่ง', 'จัดส่งแล้ว'];
+  const steps = ['รอดำเนินการ', 'เตรียมของจัดส่ง', 'กำลังจัดส่ง','จัดส่งแล้ว'];
 
   return (
     <div className="w-full">

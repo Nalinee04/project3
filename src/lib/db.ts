@@ -7,7 +7,7 @@ const connection = mysql.createPool({
   database: 'db_res', // เปลี่ยนชื่อฐานข้อมูลเป็น db_res ตามที่คุณสร้างไว้
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 2
 });
 
 // ฟังก์ชันทดสอบการเชื่อมต่อ

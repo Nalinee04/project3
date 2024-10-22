@@ -57,13 +57,9 @@ const ConfirmationPage = () => {
     }
   };
 
-  const checkRain = async () => {
-    setIsRaining(Math.random() < 0.8); // กำหนดค่าฝนตกแบบสุ่ม 80%
-  };
 
   useEffect(() => {
     fetchUserData();
-    checkRain();
 
     const queryId = searchParams.getAll("id");
     const queryName = searchParams.getAll("name");
@@ -160,7 +156,9 @@ const ConfirmationPage = () => {
       return;
     }
 
-    const completeShippingAddress = `${pinnedAddress || "ไม่ระบุที่อยู่"}, ${shippingAddress.additional.trim() || ""}`.trim();
+    const completeShippingAddress = `${pinnedAddress || "ไม่ระบุที่อยู่"}, ${
+      shippingAddress.additional.trim() || ""
+    }`.trim();
     const finalShippingAddress = completeShippingAddress || "ไม่ระบุที่อยู่";
 
     if (!finalShippingAddress) {
@@ -176,7 +174,7 @@ const ConfirmationPage = () => {
       });
       return;
     }
-
+    console.log(isRaining);
     SweetAlert(isRaining, async () => {
       const order = {
         orderNumber: `Task-${Date.now()}`,
@@ -224,7 +222,7 @@ const ConfirmationPage = () => {
         });
 
         setNotification("คำสั่งซื้อของคุณได้ถูกส่งเรียบร้อยแล้ว");
-        setCartItems([]); // ล้างตะกร้าหลังการสั่งซื้อ
+        // setCartItems([]); // ล้างตะกร้าหลังการสั่งซื้อ
         setPaymentSlip(null);
         setPreviewImage(null);
         setShippingAddress({
@@ -235,7 +233,6 @@ const ConfirmationPage = () => {
           additional: "",
         });
         router.push("/success"); // เปลี่ยนเส้นทางไปยังหน้าสำเร็จ
-
       } catch (error) {
         console.error("Error:", error);
         setError("ไม่สามารถดำเนินการตามคำสั่งได้ กรุณาลองอีกครั้ง");
@@ -244,18 +241,27 @@ const ConfirmationPage = () => {
       }
     });
   };
+
   const handlePinAddress = (address: string, addressDetails: Address) => {
     setPinnedAddress(address);
     setShippingAddress({
-        ...shippingAddress,
-        province: addressDetails.province,
-        district: addressDetails.district,
-        subDistrict: addressDetails.subDistrict || "",
-        postalCode: addressDetails.postalCode || "",
+      ...shippingAddress,
+      province: addressDetails.province,
+      district: addressDetails.district,
+      subDistrict: addressDetails.subDistrict || "",
+      postalCode: addressDetails.postalCode || "",
     });
     setShowAddressConfirmation(true);
-    checkRain();
-};
+  };
+
+  const handleWeatherCheck = (isRain: boolean) => {
+    if (isRain) {
+      console.log("ขณะนี้มีฝนตก");
+    } else {
+      console.log("ขณะนี้ไม่มีฝนตก");
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 bg-gray-50 min-h-screen">
       {notification && (
@@ -267,31 +273,31 @@ const ConfirmationPage = () => {
       <OrderHistory orders={orderHistory} />
 
       <div className="p-6 bg-white rounded-lg shadow-md">
-        <MapComponent onPinAddress={handlePinAddress} />
+        <MapComponent onPinAddress={handlePinAddress}  onWeatherCheck={handleWeatherCheck} />
 
         {showAddressConfirmation && (
           <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
             <div className="bg-white p-4 rounded-lg">
               <h2 className="text-lg font-semibold">ที่อยู่ที่ถูกเลือก</h2>
-              <p>{pinnedAddress || "ไม่ระบุที่อยู่"}</p>
+              <p>{pinnedAddress}</p>
               <textarea
-                value={additionalAddress}
+                placeholder="รายละเอียดเพิ่มเติม"
+                className="border p-2 rounded w-full"
                 onChange={(e) => setAdditionalAddress(e.target.value)}
-                placeholder="รายละเอียดเพิ่มเติม (อาคาร, ห้อง ฯลฯ)"
-                className="border rounded w-full p-2 mt-2"
+                value={additionalAddress}
               />
               <div className="flex justify-between mt-4">
                 <button
-                  onClick={confirmAddress}
-                  className="bg-green-500 text-white rounded px-4 py-2"
-                >
-                  ยืนยัน
-                </button>
-                <button
+                  className="bg-red-500 text-white px-4 py-2 rounded"
                   onClick={() => setShowAddressConfirmation(false)}
-                  className="bg-red-500 text-white rounded px-4 py-2"
                 >
                   ยกเลิก
+                </button>
+                <button
+                  className="bg-green-500 text-white px-4 py-2 rounded"
+                  onClick={confirmAddress}
+                >
+                  ยืนยันที่อยู่
                 </button>
               </div>
             </div>

@@ -19,6 +19,8 @@ import DataTable from "react-data-table-component";
 import { Separator } from "@/components/ui/separator";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { newDate } from "react-datepicker/dist/date_utils";
+import Chart from "../../components/Chart";
 
 interface Order {
   order_id: string; // เปลี่ยนเป็น order_id
@@ -40,11 +42,19 @@ const DashboardPage = () => {
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [newStatus, setNewStatus] = useState("");
   const [username, setUsername] = useState("ไม่ทราบชื่อผู้ใช้");
+  const [filterStatus, setFilterStatus] = useState(""); // เพิ่มการประกาศ filterStatus
+  const [countPending, setCountPending] = useState(0);
+  const [countCompleted, setCountCompleted] = useState(0);
+  const [countPrepare, setCountPrepare] = useState(0);
+  const [countShipping, setCountShipping] = useState(0);
+  const [countToday, setCountToday] = useState(0);
+  const [countRainy, setCountRainy] = useState(0);
 
   // ฟังก์ชันสำหรับดึงข้อมูลคำสั่งซื้อจาก API
   useEffect(() => {
     const fetchOrders = async () => {
       try {
+        console.log("Fetching orders...");
         const response = await fetch("/api/orders", {
           method: "GET",
           headers: {
@@ -63,6 +73,8 @@ const DashboardPage = () => {
           totalAmount: order.totalAmount || 0, // เพิ่มการจัดการ totalAmount
         }));
         setOrders(updatedOrders);
+        calculateCountorderstatus(updatedOrders);
+        console.log("Orders fetched successfully:", updatedOrders);
       } catch (error) {
         console.error("Error fetching orders:", error);
       }
@@ -79,99 +91,139 @@ const DashboardPage = () => {
     fetchUsername();
   }, []);
 
+  // ฟังก์ชันสำหรับกรองคำสั่งซื้อตามสถานะฟิลเตอร์
+  const getFilteredOrders = () => {
+    if (filterStatus === "") return orders;
+
+    // ออเดอร์วันนี้
+    if (filterStatus === "today") {
+      return orders.filter(
+        (order) =>
+          new Date(order.created_at).toDateString() ===
+          new Date().toDateString()
+      );
+    }
+
+    // ออเดอร์ที่ค้าง: รอดำเนินการ, เตรียมของจัดส่ง, กำลังจัดส่ง, จัดส่งแล้ว
+    if (filterStatus === "Pending") {
+      const pendingStatuses = ["รอดำเนินการ"];
+      return orders.filter((order) => pendingStatuses.includes(order.status));
+    }
+
+    // เตรียมของจัดส่ง
+    if (filterStatus === "Prepare ") {
+      return orders.filter((order) => order.status === "เตรียมของจัดส่ง");
+    }
+
+    // สถานะกำลังจัดส่ง
+    if (filterStatus === " Shipping") {
+      return orders.filter((order) => order.status === "กำลังจัดส่ง");
+    }
+
+    // สถานะ จัดส่งแล้ว
+    if (filterStatus === "Completed") {
+      return orders.filter((order) => order.status === "จัดส่งแล้ว");
+    }
+
+    // เฉพาะกรณีฝนตก
+    if (filterStatus === "rainy") {
+      return orders.filter((order) => order.is_rainy);
+    }
+
+    return orders;
+  };
+
+  // ฟังก์ชันสำหรับกดการ์ดเพื่ออัปเดตฟิลเตอร์
+  const handleCardClick = (status: string) => {
+    setFilterStatus(status);
+  };
+  
+ // ฟังก์ชันสำหรับแสดงกราฟ
+ const handleReportClick = () => {
+  setContent("chart");
+};
+
   interface OrderItem {
     price: number;
     quantity: number;
   }
-  // ฟังก์ชันสำหรับคำนวณยอดรวมคำสั่งซื้อ
-  const calculateTotalAmount = async (orderId: string) => {
+
+  // ฟังก์ชันสำหรับจัดการลบคำสั่งซื้อ
+  const handleDeleteOrder = async (orderId: string) => {
     try {
-      const response = await fetch(`/api/order_items?orderId=${orderId}`);
-      const items: OrderItem[] = await response.json(); // ระบุประเภทให้กับ items
-      
-      const total = items.reduce((sum: number, item: OrderItem) => sum + item.price * item.quantity, 0);
-      
-      // อัปเดต totalAmount ใน orders table
-      await fetch(`/api/orders/${orderId}`, {
-        method: 'PUT',
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: "DELETE",
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ totalAmount: total }), // ฟิลด์ totalAmount ต้องตรงกับฐานข้อมูล
       });
-    } catch (error) {
-      console.error("Error calculating total amount:", error);
+
+      if (!response.ok) {
+        throw new Error("ไม่สามารถลบคำสั่งซื้อได้");
+      }
+
+      const updatedOrders = orders.filter(
+        (order) => order.order_id !== orderId
+      );
+      setOrders(updatedOrders);
+      console.log("Order deleted:", orderId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Error deleting order:", error.message);
+        alert(error.message); // แสดงข้อความข้อผิดพลาด
+      } else {
+        console.error("Unknown error occurred", error);
+        alert("เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ");
+      }
     }
   };
-  
 
-   // ฟังก์ชันสำหรับจัดการลบคำสั่งซื้อ
-const handleDeleteOrder = async (orderId: string) => {
-  try {
-    const response = await fetch(`/api/orders/${orderId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("ไม่สามารถลบคำสั่งซื้อได้");
-    }
-
-    const updatedOrders = orders.filter(
-      (order) => order.order_id !== orderId
-    );
-    setOrders(updatedOrders);
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error("Error deleting order:", error.message);
-      alert(error.message); // แสดงข้อความข้อผิดพลาด
-    } else {
-      console.error("Unknown error occurred", error);
-      alert("เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ");
-    }
-  }
-};
-
-
-
-  // ฟังก์ชันสำหรับอัปเดตสถานะคำสั่งซื้อ
   const handleCheckboxChange = async (orderId: string) => {
     const updatedSelectedOrders = selectedOrders.includes(orderId)
       ? selectedOrders.filter((id) => id !== orderId)
       : [...selectedOrders, orderId];
-  
+
     setSelectedOrders(updatedSelectedOrders);
-  
+
     if (newStatus !== "") {
       try {
-        await fetch(`/api/orders/${orderId}`, {
+        const updatedOrderData: { status: string; deliveryTime?: string } = {
+          status: newStatus,
+        };
+
+        // หากสถานะใหม่คือ "จัดส่งแล้ว" ให้บันทึกเวลาที่ลูกค้าได้รับสินค้า
+        if (newStatus === "Completed") {
+          updatedOrderData.deliveryTime = new Date().toISOString(); // บันทึกเวลาปัจจุบัน
+        }
+        console.log(
+          "Sending update request for order:",
+          orderId,
+          updatedOrderData
+        ); // Log ก่อนส่ง request
+
+        await fetch(`/api/admin/orders/${orderId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-          body: JSON.stringify({ status: newStatus }),
         });
-  
-        // เรียกใช้ฟังก์ชันคำนวณยอดรวมหลังจากอัปเดตสถานะ
-        await calculateTotalAmount(orderId);
-  
+
         const updatedOrders = orders.map((order) =>
           updatedSelectedOrders.includes(order.order_id)
-            ? { ...order, status: newStatus }
+            ? { ...order, ...updatedOrderData }
             : order
         );
         setOrders(updatedOrders);
+        calculateCountorderstatus(updatedOrders);
+        // เรียกใช้ฟังก์ชันคำนวณยอดรวมหลังจากอัปเดตสถานะ
+        console.log("Order updated:", orderId, updatedOrderData);
       } catch (error) {
         console.error("Error updating order status:", error);
       }
     }
   };
 
-  // ฟังก์ชัน handleViewBill พร้อมการกำหนดประเภทข้อมูล order
   const handleViewBill = (order: Order) => {
     const params = new URLSearchParams();
     params.append("order", JSON.stringify(order));
@@ -183,25 +235,28 @@ const handleDeleteOrder = async (orderId: string) => {
     router.push("/admin/loginadmin");
   };
 
-  // ฟังก์ชันสำหรับคำนวณยอดคำสั่งซื้อ
-  const calculateTodayOrders = () => {
-    const today = new Date().toDateString();
-    return orders.filter(
-      (order) => new Date(order.created_at).toDateString() === today // เปลี่ยนเป็น created_at
-    ).length;
+  const calculateCountorderstatus = (order: Order[]) => {
+    setCountCompleted(
+      order.filter((order) => order.status === "Completed").length
+    );
+
+    setCountPending(order.filter((order) => order.status !== "Pending").length);
+
+    setCountRainy(order.filter((order) => order.is_rainy).length);
+
+    setCountToday(
+      order.filter(
+        (order) =>
+          new Date(order.created_at).toDateString() ===
+          new Date().toDateString() // เปลี่ยนเป็น created_at
+      ).length
+    );
   };
 
-  const calculateCompletedOrders = () => {
-    return orders.filter((order) => order.status === "จัดส่งแล้ว").length;
-  };
-
-  const calculatePendingOrders = () => {
-    return orders.filter((order) => order.status !== "จัดส่งแล้ว").length;
-  };
-
-  const calculateRainyOrders = () => {
-    return orders.filter((order) => order.is_rainy).length; // เปลี่ยนเป็น is_rainy
-  };
+  //   useEffect(()=>{
+  //     console.log(111)
+  // calculateCountorderstatus()
+  //   },[orders,selectedOrders])
 
   const columns = [
     {
@@ -211,6 +266,7 @@ const handleDeleteOrder = async (orderId: string) => {
           type="checkbox"
           checked={selectedOrders.includes(row.order_id)} // เปลี่ยนเป็น order_id
           onChange={() => handleCheckboxChange(row.order_id)} // เปลี่ยนเป็น order_id
+          disabled={row.status === "Completed"}
           className="mr-2"
         />
       ),
@@ -218,13 +274,13 @@ const handleDeleteOrder = async (orderId: string) => {
     },
     {
       name: "หมายเลขคำสั่งซื้อ",
-      selector: (row: Order) => row.order_number, 
+      selector: (row: Order) => row.order_number,
       sortable: true,
     },
     {
       name: "เวลาที่รอ",
       cell: (row: Order) => (
-        <WaitingTime orderTime={new Date(row.created_at)} status={row.status} /> 
+        <WaitingTime orderTime={new Date(row.created_at)} status={row.status} />
       ),
       sortable: true,
     },
@@ -268,12 +324,12 @@ const handleDeleteOrder = async (orderId: string) => {
     },
     {
       name: "เวลาที่ลูกค้าได้รับสินค้า",
-      selector: (row: Order) =>row.deliveryTime,
+      selector: (row: Order) => row.deliveryTime,
       sortable: true,
     },
     {
       name: "สถานะออเดอร์",
-      selector: (row: Order) =>row.status,
+      selector: (row: Order) => row.status,
       sortable: true,
     },
   ];
@@ -309,22 +365,7 @@ const handleDeleteOrder = async (orderId: string) => {
             }`}
             onClick={() => setContent("addProduct")}
           >
-            <FontAwesomeIcon icon={faUtensils} className="text-2xl" />
-            <span>จัดการเมนู</span>
-          </li>
-          <li
-            className={`flex flex-col items-center gap-1 cursor-pointer ${
-              content === "report" ? "text-blue-400" : ""
-            }`}
-            onClick={() => setContent("report")}
-          >
-            <FontAwesomeIcon icon={faFileAlt} className="text-2xl" />
-            <span>รายงาน</span>
-          </li>
-          <li
-            className="flex flex-col items-center gap-1 cursor-pointer"
-            onClick={handleLogout}
-          >
+          
             <FontAwesomeIcon icon={faSignOutAlt} className="text-2xl" />
             <span>ออกจากระบบ</span>
           </li>
@@ -372,34 +413,46 @@ const handleDeleteOrder = async (orderId: string) => {
 
             {/* Dashboard Summary Cards */}
             <div className="grid grid-cols-4 gap-4 mb-8">
-              <div className="bg-gradient-to-r from-gray-200 to-gray-400 p-6 rounded-lg shadow-lg text-center text-gray-800 transition-transform hover:scale-105">
+              <div
+                className="bg-gradient-to-r from-gray-200 to-gray-400 p-6 rounded-lg shadow-lg text-center text-gray-800 transition-transform hover:scale-105 cursor-pointer"
+                onClick={() => handleCardClick("today")}
+              >
                 <FontAwesomeIcon
                   icon={faShoppingCart}
                   className="text-3xl mb-2"
                 />
                 <h2 className="font-bold text-lg">ออเดอร์วันนี้</h2>
-                <p className="text-2xl">{calculateTodayOrders()}</p>
+                <p className="text-2xl">{countToday}</p>
               </div>
-              <div className="bg-gradient-to-r from-gray-200 to-gray-400 p-6 rounded-lg shadow-lg text-center text-gray-800 transition-transform hover:scale-105">
+              <div
+                className="bg-gradient-to-r from-gray-200 to-gray-400 p-6 rounded-lg shadow-lg text-center text-gray-800 transition-transform hover:scale-105 cursor-pointer"
+                onClick={() => handleCardClick("completed")}
+              >
                 <FontAwesomeIcon
                   icon={faCheckCircle}
                   className="text-3xl mb-2"
                 />
                 <h2 className="font-bold text-lg">ออเดอร์ที่เสร็จแล้ว</h2>
-                <p className="text-2xl">{calculateCompletedOrders()}</p>
+                <p className="text-2xl">{countCompleted}</p>
               </div>
-              <div className="bg-gradient-to-r from-gray-200 to-gray-400 p-6 rounded-lg shadow-lg text-center text-gray-800 transition-transform hover:scale-105">
+              <div
+                className="bg-gradient-to-r from-gray-200 to-gray-400 p-6 rounded-lg shadow-lg text-center text-gray-800 transition-transform hover:scale-105 cursor-pointer"
+                onClick={() => handleCardClick("pending")}
+              >
                 <FontAwesomeIcon
                   icon={faTimesCircle}
                   className="text-3xl mb-2"
                 />
                 <h2 className="font-bold text-lg">ออเดอร์ที่ค้าง</h2>
-                <p className="text-2xl">{calculatePendingOrders()}</p>
+                <p className="text-2xl">{countPending}</p>
               </div>
-              <div className="bg-gradient-to-r from-gray-200 to-gray-400 p-6 rounded-lg shadow-lg text-center text-gray-800 transition-transform hover:scale-105">
-                <FontAwesomeIcon icon={faCloudRain} className="text-3xl mb-2" />
+              <div
+                className="bg-gradient-to-r from-gray-200 to-gray-400 p-6 rounded-lg shadow-lg text-center text-gray-800 transition-transform hover:scale-105 cursor-pointer"
+                onClick={() => handleCardClick("rainy")}
+              >
+                <FontAwesomeIcon className="text-3xl mb-2" icon={faCloudRain} />
                 <h2 className="font-bold text-lg">ออเดอร์ที่ฝนตก</h2>
-                <p className="text-2xl">{calculateRainyOrders()}</p>{" "}
+                <p className="text-2xl">{countRainy}</p>{" "}
                 {/* แสดงผลจำนวนออเดอร์ที่ฝนตก */}
               </div>
             </div>
@@ -418,17 +471,12 @@ const handleDeleteOrder = async (orderId: string) => {
                       เปลี่ยนสถานะ
                     </option>{" "}
                     {/* This is the disabled label */}
-                    <option value="รอดำเนินการ">รอดำเนินการ</option>
-                    <option value="เตรียมของจัดส่ง">เตรียมของจัดส่ง</option>
-                    <option value="กำลังจัดส่ง">กำลังจัดส่ง</option>
-                    <option value="จัดส่งแล้ว">จัดส่งแล้ว</option>
+                    <option value="Pending">รอดำเนินการ</option>
+                    <option value="Prepare">เตรียมของจัดส่ง</option>
+                    <option value="Shipping">กำลังจัดส่ง</option>
+                    <option value="Completed">จัดส่งแล้ว</option>
                   </select>
                 </div>
-                <input
-                  type="text"
-                  className="border p- rounded-lg"
-                  placeholder="ค้นหา"
-                />
               </div>
 
               {/* DataTable */}

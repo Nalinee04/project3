@@ -1,4 +1,3 @@
-// app/api/forgotpassword/route.ts
 import { NextResponse } from "next/server";
 import emailjs from "emailjs-com"; // Import EmailJS SDK
 import connection from "@/lib/db";
@@ -61,6 +60,7 @@ export async function POST(request: Request) {
     // ตั้งค่าข้อมูลเพื่อส่งอีเมล
     const templateParams = {
       email: email,
+      reply_to: email,  // เพิ่มฟิลด์ reply_to เพื่อให้แน่ใจว่าอีเมลจะส่งไปยังผู้ใช้
       reset_link: resetLink, // ใช้ลิงก์ที่สร้างขึ้น
     };
 

@@ -4,13 +4,16 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface Order {
-  orderNumber: string;
-  customerName: string;
+  order_id: string; // เปลี่ยนเป็น order_id
+  order_number: string; // เปลี่ยนเป็น order_number
+  customer_name: string; // เปลี่ยนเป็น customer_name
+  totalAmount: number; // เพิ่มฟิลด์ totalAmount
+  shipping_address?: string; // หากมีข้อมูลนี้ใน API ให้เพิ่ม
+  created_at: string; // เปลี่ยนเป็น created_at
+  deliveryTime: string; // เพิ่มฟิลด์ deliveryTime
   status: string;
-  date: string; // Example: "2024-10-08"
-  time: string; // Example: "14:30"
+  is_rainy?: boolean; // เปลี่ยนเป็น is_rainy
   items: { id: string; name: string; price: number; quantity: number; image: string }[]; // Items in the order
-  shippingAddress: string; // Added to show shipping address in the modal
 }
 
 const OrderHistoryPage = () => {
@@ -20,9 +23,20 @@ const OrderHistoryPage = () => {
   const userName = "john_doe"; // ดึงชื่อผู้ใช้จาก context หรือ global state
 
   useEffect(() => {
-    // Fetch order history from localStorage or API
-    const storedOrders = JSON.parse(localStorage.getItem(`${userName}_orders`) || "[]");
-    setOrders(storedOrders); // Load orders for the specific user
+    const fetchOrders = async () => {
+      try {
+        const response = await fetch('/api/orders'); // เปลี่ยนเป็น endpoint ที่คุณใช้ดึงข้อมูลออเดอร์
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        setOrders(data); // Load orders for the specific user
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      }
+    };
+
+    fetchOrders();
   }, []);
 
   const handleOrderClick = (order: Order) => {
@@ -54,23 +68,21 @@ const OrderHistoryPage = () => {
       <div className="max-w-3xl mx-auto bg-white shadow rounded-lg p-6">
         <h2 className="text-xl font-bold text-center mb-6">Order History</h2>
 
-        {orders.map((order, index) => (
+        {orders.map((order) => (
           <div
-            key={index}
+            key={order.order_id}
             className="mb-6 border-b border-gray-200 pb-4 flex justify-between items-center cursor-pointer"
             onClick={() => handleOrderClick(order)}
           >
             <div>
-              <h3 className="text-md font-semibold">Order #{order.orderNumber}</h3>
+              <h3 className="text-md font-semibold">Order #{order.order_number}</h3>
               <div className="text-sm text-gray-600">
-                <p>Customer: {order.customerName}</p>
-                <p>Date: {order.date}</p>
-                <p>Time: {order.time}</p>
+                <p>Customer: {order.customer_name}</p>
+                <p>Date: {new Date(order.created_at).toLocaleDateString()}</p>
+                <p>Time: {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
               </div>
             </div>
-            <span className={`text-sm py-1 px-2 rounded-full ml-4 ${
-              order.status === "Completed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-            }`}>
+            <span className={`text-sm py-1 px-2 rounded-full ml-4 ${order.status === "Completed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
               {order.status}
             </span>
           </div>
@@ -81,10 +93,10 @@ const OrderHistoryPage = () => {
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
             <div className="bg-white rounded-lg shadow-lg p-4 w-11/12 max-w-md">
               <h2 className="text-lg font-bold mb-2">Order Details</h2>
-              <h3 className="text-md font-semibold">Order #{selectedOrder.orderNumber}</h3>
-              <p>Customer: {selectedOrder.customerName}</p>
-              <p>Date: {selectedOrder.date}</p>
-              <p>Time: {selectedOrder.time}</p>
+              <h3 className="text-md font-semibold">Order #{selectedOrder.order_number}</h3>
+              <p>Customer: {selectedOrder.customer_name}</p>
+              <p>Date: {new Date(selectedOrder.created_at).toLocaleDateString()}</p>
+              <p>Time: {new Date(selectedOrder.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
               <p>Status: {selectedOrder.status}</p>
               <h3 className="text-md font-semibold mt-4">Items:</h3>
               {selectedOrder.items.map((item) => (
@@ -105,7 +117,7 @@ const OrderHistoryPage = () => {
                 <span>฿{selectedOrder.items.reduce((total, item) => total + item.price * item.quantity, 0).toFixed(2)}</span>
               </div>
               <h3 className="text-md font-semibold mt-4">Shipping Address:</h3>
-              <p>{selectedOrder.shippingAddress}</p>
+              <p>{selectedOrder.shipping_address}</p>
               <div className="text-center mt-4">
                 <button
                   className="bg-black text-white px-4 py-2 rounded"

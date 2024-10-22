@@ -41,6 +41,9 @@ const AdminLoginPage = () => {
       // บันทึก Token ลงใน localStorage
       localStorage.setItem('token', data.token);
       
+      // แสดง token ใน console
+      console.log("Token:", data.token);
+      
       toast({
         title: "Login Successful",
         description: `Logged in successfully at ${new Date().toLocaleString()}`,
