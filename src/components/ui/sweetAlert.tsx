@@ -5,7 +5,7 @@ const SweetAlert = (isRaining: boolean, onConfirm: () => void) => {
   console.log("SweetAlert called with isRaining:", isRaining); // เพิ่มการล็อกเพื่อดูค่าที่ถูกส่งเข้ามา
 
   const gifUrl = isRaining
-    ? "/images/Raining.gif"
+    ? "/images/Chef.gif"
     : "/images/Deliverytwo.gif";
 
   const swalWithBootstrapButtons = Swal.mixin({
@@ -49,7 +49,7 @@ const handleOrderSubmission = (onConfirm: () => void) => {
   Swal.fire({
     title: "กำลังส่งคำสั่งซื้อ!",
     html: "โปรดรอ <b></b> วินาที...",
-    timer: 5000, // ตั้งเวลา 5 วินาที
+    timer: 3000, // ตั้งเวลา 5 วินาที
     timerProgressBar: true,
     didOpen: () => {
       const popup = Swal.getPopup();
@@ -80,10 +80,10 @@ const handleOrderSubmission = (onConfirm: () => void) => {
 // ฟังก์ชันสำหรับแจ้งเตือนฝนตก
 const handleRainAlert = (gifUrl: string, onConfirm: () => void) => {
   Swal.fire({
-    title: "ฝนตก กรุณารอการจัดส่ง",
+    title: "กำลังจัดเตรียมอาหาร โปรดรอซักครู่",
     imageUrl: gifUrl,
-    imageHeight: 150,
-    imageAlt: "ฝนตก",
+    imageHeight: 300,
+    imageAlt: "เตรียมอาหาร",
     confirmButtonText: "รับทราบ",
   }).then(() => {
     console.log("Order confirmed with rain alert."); // เพิ่มการล็อกเมื่อมีการแจ้งเตือนฝนตก

@@ -1,43 +1,57 @@
-// src/app/api/register/route.ts
 import { NextResponse } from 'next/server';
-import connection from '@/lib/db'; // ตรวจสอบว่าคุณตั้งค่าการเชื่อมต่อกับฐานข้อมูล MySQL ถูกต้อง
-import bcrypt from 'bcryptjs';
+import connection from '@/lib/db'; // ตรวจสอบการเชื่อมต่อฐานข้อมูล
 import { RowDataPacket } from 'mysql2';
+import bcrypt from 'bcrypt'; // ใช้สำหรับการเข้ารหัสรหัสผ่าน
+import jwt from 'jsonwebtoken'; // ใช้สำหรับการสร้าง token
 
 export async function POST(req: Request) {
   try {
-    const { username, email, password } = await req.json();
+    const { phone, name, password } = await req.json();
 
-    // ตรวจสอบว่าชื่อผู้ใช้หรืออีเมลถูกกรอกหรือไม่
-    if (!username || !email || !password) {
-      return NextResponse.json({ error: 'กรุณากรอกชื่อผู้ใช้, อีเมล และรหัสผ่าน' }, { status: 400 });
+    // ตรวจสอบว่าผู้ใช้กรอกข้อมูลครบถ้วน
+    if (!phone || !name || !password) {
+      return NextResponse.json({ error: 'กรุณากรอกข้อมูลให้ครบถ้วน' }, { status: 400 });
     }
 
-    // ตรวจสอบว่าชื่อผู้ใช้หรืออีเมลมีอยู่ในฐานข้อมูลแล้วหรือไม่
-    const checkQuery = 'SELECT * FROM users WHERE username = ? OR email = ?';
-    const checkValues = [username, email];
-
-    // เรียกใช้ query โดยตรง
-    const [existingUser]: [RowDataPacket[], any] = await connection.query(checkQuery, checkValues);
-
-    // ถ้ามีผู้ใช้ที่มีชื่อผู้ใช้หรืออีเมลซ้ำกัน
-    if (existingUser.length > 0) {
-      return NextResponse.json({ error: 'ชื่อผู้ใช้หรืออีเมลถูกใช้งานแล้ว' }, { status: 400 });
+    // ตรวจสอบว่าเบอร์โทรศัพท์เป็นตัวเลขและไม่เกิน 10 หลัก
+    const phonePattern = /^[0-9]{10}$/;
+    if (!phone.match(phonePattern)) {
+      return NextResponse.json({ error: 'เบอร์โทรศัพท์ต้องเป็นตัวเลขและมีจำนวน 10 หลัก' }, { status: 400 });
     }
 
-    // เข้ารหัสรหัสผ่าน
+    // ตรวจสอบว่า ชื่อ ห้ามมีตัวเลข
+    const namePattern = /^[A-Za-z\u0E00-\u0E7F ]+$/;
+    if (!name.match(namePattern)) {
+      return NextResponse.json({ error: 'ชื่อห้ามมีตัวเลข' }, { status: 400 });
+    }
+
+    // ตรวจสอบว่าเบอร์โทรนี้มีอยู่ในฐานข้อมูลหรือไม่
+    const checkPhoneQuery = 'SELECT * FROM users WHERE phone = ?';
+    const [existingPhoneUser]: [RowDataPacket[], any] = await connection.query(checkPhoneQuery, [phone]);
+    if (existingPhoneUser.length > 0) {
+      return NextResponse.json({ error: 'มีผู้ใช้ที่ใช้เบอร์โทรศัพท์นี้แล้ว' }, { status: 400 });
+    }
+
+    // ตรวจสอบว่า ชื่อนี้มีอยู่ในระบบหรือไม่
+    const checkNameQuery = 'SELECT * FROM users WHERE name = ?';
+    const [existingNameUser]: [RowDataPacket[], any] = await connection.query(checkNameQuery, [name]);
+    if (existingNameUser.length > 0) {
+      return NextResponse.json({ error: 'มีผู้ใช้ที่ใช้ชื่อนี้แล้ว' }, { status: 400 });
+    }
+
+    // เข้ารหัสรหัสผ่านก่อนบันทึกลงฐานข้อมูล
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // เพิ่มผู้ใช้ใหม่ในฐานข้อมูล
-    const insertQuery = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
-    const insertValues = [username, email, hashedPassword];
+    // ถ้าไม่มีผู้ใช้ที่มีเบอร์โทรศัพท์หรือชื่อซ้ำ ก็สามารถสมัครสมาชิกใหม่ได้
+    const insertQuery = 'INSERT INTO users (phone, name, password) VALUES (?, ?, ?)';
+    await connection.query(insertQuery, [phone, name, hashedPassword]);
 
-    // เรียกใช้ query โดยตรง
-    await connection.query(insertQuery, insertValues);
+    // สร้าง JWT token
+    const token = jwt.sign({ phone, name }, 'your_secret_key', { expiresIn: '1h' });
 
-    // ตอบกลับเมื่อสมัครสมาชิกสำเร็จ
-    return NextResponse.json({ message: 'สมัครสมาชิกสำเร็จ' }, { status: 201 });
-  } catch (error: any) { // เพิ่มประเภท any ให้กับ error
+    return NextResponse.json({ message: 'ผู้ใช้ถูกสร้างแล้ว โปรดเข้าสู่ระบบ', token }, { status: 200 });
+
+  } catch (error: any) {
     console.error('Error in /api/register:', error);
     return NextResponse.json({ error: 'เกิดข้อผิดพลาด: ' + error.message }, { status: 500 });
   }

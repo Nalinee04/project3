@@ -5,7 +5,7 @@ import { RowDataPacket } from 'mysql2'; // นำเข้า RowDataPacket
 // ฟังก์ชันดึงข้อมูลผู้ใช้ตาม userId
 export async function getUserById(userId: number): Promise<User | null> {
   try {
-    const query = 'SELECT user_id, username, email, address FROM users WHERE user_id = ?'; // ใช้ user_id เพื่อให้ตรงกับฐานข้อมูล
+    const query = 'SELECT user_id,name, password, phone, image FROM users WHERE user_id = ?'; // ใช้ user_id เพื่อให้ตรงกับฐานข้อมูล
     const [rows]: [RowDataPacket[], any] = await connection.query(query, [userId]); // ใช้ RowDataPacket[]
 
     if (rows.length === 0) {

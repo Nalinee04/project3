@@ -3,12 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCircleUser,
-  faLock,
-  faEnvelope,
-  faSpinner,
-} from "@fortawesome/free-solid-svg-icons";
+import { faLock, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import { useUser } from "../../components/Usercontext";
@@ -34,21 +29,20 @@ const EditProfilePage = () => {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [username, setUsername] = useState(user?.username || "");
-  const [email, setEmail] = useState(user?.email || "");
+  const [name, setName] = useState<string>(user?.name || "");
+  const [phone, setPhone] = useState<string>(user?.phone || "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [selectedAvatar, setSelectedAvatar] = useState(
-    user?.image || avatars[0]
-  );
+  const [selectedAvatar, setSelectedAvatar] = useState(user?.image || avatars[0]);
   const [isSaving, setIsSaving] = useState(false);
 
   const [initialData, setInitialData] = useState({
-    username: user?.username || "",
-    email: user?.email || "",
+    username: user?.name || "",
+    phone: user?.phone || "",
     image: user?.image || avatars[0],
   });
-  console.log(user);
+  
+
   useEffect(() => {
     if (!user) {
       Swal.fire({
@@ -58,18 +52,17 @@ const EditProfilePage = () => {
         confirmButtonText: "ตกลง",
       }).then(() => {
         router.push('/login');
-        console.log(user);
       });
       return;
     }
 
     setInitialData({
-      username: user.username,
-      email: user.email,
+      name: user.name,
+      phone: user.phone,
       image: user.image,
     });
-    setUsername(user.username);
-    setEmail(user.email);
+    setName(user.name);
+    setPhone(user.phone);
     setSelectedAvatar(user.image || avatars[0]);
   }, [user]);
 
@@ -87,8 +80,8 @@ const EditProfilePage = () => {
 
   const handleCancelClick = () => {
     setIsEditing(false);
-    setUsername(initialData.username);
-    setEmail(initialData.email);
+    setName(initialData.name);
+    setPhone(initialData.phone);
     setSelectedAvatar(initialData.image);
   };
 
@@ -105,8 +98,8 @@ const EditProfilePage = () => {
     }
 
     const hasChanges =
-      username !== initialData.username ||
-      email !== initialData.email ||
+      name !== initialData.name ||
+      phone !== initialData.phone ||
       password ||
       selectedAvatar !== initialData.image;
 
@@ -137,12 +130,10 @@ const EditProfilePage = () => {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          ...(username !== initialData.username && { username }),
-          ...(email !== initialData.email && { email }),
+          ...(name !== initialData.name && { name: name }),
+          ...(phone !== initialData.phone && { phone }),
           ...(password && { password }),
-          ...(selectedAvatar !== initialData.image && {
-            image: selectedAvatar,
-          }),
+          ...(selectedAvatar !== initialData.image && { image: selectedAvatar }),
         }),
       });
 
@@ -153,15 +144,15 @@ const EditProfilePage = () => {
 
       updateUser({
         ...user,
-        username: username !== initialData.username ? username : user.username,
-        email: email !== initialData.email ? email : user.email,
+        name: name !== initialData.name ? name : user.name,
+        phone: phone !== initialData.phone ? phone : user.phone,
         image:
           selectedAvatar !== initialData.image ? selectedAvatar : user.image,
       });
 
       setIsSaving(false);
       setIsEditing(false);
-      setInitialData({ username, email, image: selectedAvatar });
+      setInitialData({ name: name, phone, image: selectedAvatar });
 
       Swal.fire({
         title: "โปรไฟล์ถูกแก้ไขเรียบร้อย!",
@@ -184,7 +175,7 @@ const EditProfilePage = () => {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-blue-50 to-indigo-100 p-6">
-      <div className="w-full max-w-xl bg-white rounded-lg shadow-lg p-8 space-y-6">
+      <div className="w-full max-w-xl bg-white rounded-lg shadow-lg p-6 sm:p-8 space-y-6">
         <h2 className="text-2xl font-semibold text-center text-gray-800">
           แก้ไขโปรไฟล์
         </h2>
@@ -204,7 +195,7 @@ const EditProfilePage = () => {
             <h3 className="text-center text-lg font-medium text-gray-600">
               เลือก Avatar ของคุณ
             </h3>
-            <div className="avatar-selection grid grid-cols-4 gap-4 mb-6">
+            <div className="avatar-selection grid grid-cols-3 sm:grid-cols-4 gap-4 mb-6">
               {avatars.map((avatar, index) => (
                 <img
                   key={index}
@@ -224,10 +215,10 @@ const EditProfilePage = () => {
         {!isEditing ? (
           <div className="text-center space-y-4">
             <p className="text-gray-600">
-              <strong>ชื่อ:</strong> {username}
+              <strong>ชื่อ:</strong> {name}
             </p>
             <p className="text-gray-600">
-              <strong>อีเมล:</strong> {email}
+              <strong>เบอร์โทร:</strong> {phone}
             </p>
             <button
               onClick={handleEditClick}
@@ -239,27 +230,27 @@ const EditProfilePage = () => {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-gray-700" htmlFor="username">
+              <label className="block text-gray-700" htmlFor="name">
                 ชื่อผู้ใช้
               </label>
               <input
                 type="text"
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className="border border-gray-300 rounded-md p-2 w-full"
                 required
               />
             </div>
             <div>
-              <label className="block text-gray-700" htmlFor="email">
-                อีเมล
+              <label className="block text-gray-700" htmlFor="phone">
+                เบอร์โทร
               </label>
               <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="tel"
+                id="phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 className="border border-gray-300 rounded-md p-2 w-full"
                 required
               />
@@ -301,16 +292,16 @@ const EditProfilePage = () => {
               <button
                 type="button"
                 onClick={handleCancelClick}
-                className="bg-gray-300 text-gray-700 py-2 px-6 rounded-md hover:bg-gray-400 transition duration-300"
+                className="text-gray-500 hover:text-gray-700"
               >
                 ยกเลิก
               </button>
               <button
                 type="submit"
+                disabled={isSaving}
                 className={`bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-600 transition duration-300 ${
                   isSaving ? "opacity-50 cursor-not-allowed" : ""
                 }`}
-                disabled={isSaving}
               >
                 {isSaving ? (
                   <FontAwesomeIcon icon={faSpinner} spin />

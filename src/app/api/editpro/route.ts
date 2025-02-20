@@ -1,4 +1,3 @@
-//app/api/editpro/route.ts
 import { NextResponse } from 'next/server';
 import connection from '@/lib/db'; // Database connection
 import bcrypt from 'bcryptjs';
@@ -8,7 +7,6 @@ import validator from 'validator';
 
 export async function PATCH(req: Request) {
   try {
-    console.log(req)
     const token = req.headers.get('Authorization')?.split(' ')[1];
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -22,7 +20,6 @@ export async function PATCH(req: Request) {
     let decoded: JwtPayload;
     try {
       decoded = jwt.verify(token, jwtSecret) as JwtPayload; 
-      console.log("Decoded JWT:", decoded); // เพิ่มการตรวจสอบที่นี่
     } catch (error) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
@@ -32,46 +29,53 @@ export async function PATCH(req: Request) {
     }
 
     const userId = decoded.id; 
-    const { username, email, password, image } = await req.json();
+    const { name, phone, password, image } = await req.json();
 
-    if (!username && !email && !password && !image) {
+    if (!name && !phone && !password && !image) {
       return NextResponse.json({ error: 'กรุณากรอกข้อมูลที่ต้องการแก้ไข' }, { status: 400 });
     }
 
     // ตรวจสอบข้อมูล
-    if (email && !validator.isEmail(email)) {
-      return NextResponse.json({ error: 'อีเมลไม่ถูกต้อง' }, { status: 400 });
+    if (name && !/^[ก-๙a-zA-Z\s\-]+$/.test(name)) { // อัปเดต RegEx ให้รองรับสัญลักษณ์ "-"
+      return NextResponse.json({ error: 'ชื่อไม่ถูกต้อง' }, { status: 400 });
     }
 
-    const checkDuplicate = async (field: 'username' | 'email', value: string) => {
+    if (phone && !validator.isMobilePhone(phone, 'th-TH')) {
+      return NextResponse.json({ error: 'เบอร์โทรศัพท์ไม่ถูกต้อง' }, { status: 400 });
+    }
+
+    const checkDuplicate = async (field: 'name' | 'phone', value: string) => {
       const checkQuery = `SELECT * FROM users WHERE ${field} = ? AND user_id != ?`;
       const checkValues = [value, userId];
-      const [existingUser]: [RowDataPacket[], any] = await connection.query(checkQuery, checkValues);
+      const [existingUser]: [RowDataPacket[], any] = await connection.promise().query(checkQuery, checkValues);
       return existingUser.length > 0;
     };
 
-    if (username && await checkDuplicate('username', username)) {
+    if (name && await checkDuplicate('name', name)) {
       return NextResponse.json({ error: 'ชื่อผู้ใช้ถูกใช้งานแล้ว' }, { status: 400 });
     }
 
-    if (email && await checkDuplicate('email', email)) {
-      return NextResponse.json({ error: 'อีเมลถูกใช้งานแล้ว' }, { status: 400 });
+    if (phone && await checkDuplicate('phone', phone)) {
+      return NextResponse.json({ error: 'เบอร์โทรศัพท์ถูกใช้งานแล้ว' }, { status: 400 });
     }
 
     const updates: string[] = [];
     const values: any[] = [];
 
-    if (username) {
-      updates.push('username = ?');
-      values.push(username);
+    if (name) {
+      updates.push('name = ?');
+      values.push(name);
     }
 
-    if (email) {
-      updates.push('email = ?');
-      values.push(email);
+    if (phone) {
+      updates.push('phone = ?');
+      values.push(phone);
     }
 
     if (password) {
+      if (password.length < 8) {
+        return NextResponse.json({ error: 'รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร' }, { status: 400 });
+      }
       const hashedPassword = await bcrypt.hash(password, 10);
       updates.push('password = ?');
       values.push(hashedPassword);
@@ -87,8 +91,8 @@ export async function PATCH(req: Request) {
     // ถ้ามีการอัปเดต
     if (updates.length > 0) {
       const updateQuery = `UPDATE users SET ${updates.join(', ')} WHERE user_id = ?`;
-      await connection.query(updateQuery, values);
-      return NextResponse.json({ message: 'อัปเดตโปรไฟล์สำเร็จ' }, { status: 200 });
+      await connection.promise().query(updateQuery, values);
+      return NextResponse.json({ message: 'โปรไฟล์ของคุณได้รับการอัปเดตสำเร็จ' }, { status: 200 });
     } else {
       return NextResponse.json({ message: 'ไม่มีการเปลี่ยนแปลงข้อมูล' }, { status: 200 });
     }

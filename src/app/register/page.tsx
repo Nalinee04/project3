@@ -1,157 +1,175 @@
-"use client"; 
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Eye, EyeOff } from "lucide-react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircleUser, faLock, faEnvelope } from '@fortawesome/free-solid-svg-icons';
-import { toast } from "@/hooks/use-toast";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faMobileScreen } from "@fortawesome/free-solid-svg-icons";
 
 const RegisterPage = () => {
-  const [showPassword, setShowPassword] = useState(false);
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState(""); // รหัสผ่าน
+  const [confirmPassword, setConfirmPassword] = useState(""); // ยืนยันรหัสผ่าน
+  const [error, setError] = useState(""); // error message state
+  const [formValid, setFormValid] = useState(true); // to check if the form is valid
   const router = useRouter();
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log('Submitting registration with:', { username, email, password }); // เพิ่มการล็อกที่นี่เพื่อตรวจสอบข้อมูลที่ส่งไป
-
-    try {
-      const response = await fetch("/api/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, email, password }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        toast({
-          title: errorData.error,
-          description: Date(),
-        });
-        throw new Error(errorData.error || "Registration failed");
-      } else {
-        handleOk();
-      }
-
-    } catch (error: any) {
-      console.error('Error during registration:', error); // แสดงข้อความที่เกิดข้อผิดพลาด
+  // ตรวจสอบชื่อห้ามมีตัวเลข
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (/[^a-zA-Z\u0E00-\u0E7F ]/.test(value)) {  // Allow only letters (English/Thai)
+      setError("ชื่อห้ามมีตัวเลข");
+      setFormValid(false);
+    } else {
+      setError("");
+      setName(value);
+      setFormValid(true);
     }
   };
 
-  const handleOk = () => {
-    console.log('Registration successful!'); // เพิ่มการล็อกเมื่อสมัครสมาชิกสำเร็จ
-    toast({
-      title: "Register successfully",
-      description: Date(),
+  // ตรวจสอบเบอร์โทรศัพท์ให้เป็นตัวเลข 10 หลัก
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (!/^\d{0,10}$/.test(value)) {  // Allow only numbers, max 10 digits
+      setError("เบอร์โทรศัพท์ต้องเป็นตัวเลขและมี 10 หลัก");
+      setFormValid(false);
+    } else {
+      setError("");
+      setPhone(value);
+      setFormValid(true);
+    }
+  };
+
+  // ตรวจสอบรหัสผ่าน
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPassword(value);
+
+    if (value !== confirmPassword) {
+      setError("รหัสผ่านและยืนยันรหัสผ่านต้องตรงกัน");
+      setFormValid(false);
+    } else {
+      setError("");
+      setFormValid(true);
+    }
+  };
+
+  // ตรวจสอบยืนยันรหัสผ่าน
+  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setConfirmPassword(value);
+
+    if (value !== password) {
+      setError("รหัสผ่านและยืนยันรหัสผ่านต้องตรงกัน");
+      setFormValid(false);
+    } else {
+      setError("");
+      setFormValid(true);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    // Check for form validity before submitting
+    if (!formValid || !phone || !name || !password || !confirmPassword) {
+      toast({ title: "กรุณากรอกข้อมูลให้ครบถ้วน", description: error });
+      return;
+    }
+
+    // ส่งข้อมูลไปที่ API สำหรับสมัครสมาชิก
+    const response = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, name, password }), // ไม่ต้องส่ง confirmPassword
     });
-    router.push('/login'); // Redirect ไปยังหน้าล็อกอิน
+
+    const data = await response.json();
+
+    if (data.message) {
+      toast({ title: "สมัครสมาชิกสำเร็จ", description: "ยินดีต้อนรับเข้าสู่ระบบ!" });
+      router.push("/login"); // ไปที่หน้า login หรือหน้าอื่นๆ
+    } else if (data.error) {
+      toast({ title: "Error", description: data.error });
+    }
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen p-4" style={{ backgroundColor: '#1E1E1E' }}>
-      <div className="w-[1100px] h-[600px] bg-white rounded-lg shadow-md flex">
-        
-        {/* ฟอร์มลงทะเบียนด้านซ้าย */}
-        <div className="w-1/ p-4 flex justify-start items-center">
-          <Image
-            src="/images/logo.png"
-            alt="Shop Logo"
-            width={500}
-            height={500}
-            className="object-contain ml-6"
+    <div className="flex flex-col items-center min-h-screen bg-yellow-400 pt-16">
+      {/* Logo */}
+      <div className="mb-6 mt-0">
+        <Image src="/images/logofoodd.png" alt="Logo" width={150} height={150} />
+      </div>
+
+      {/* Form Card */}
+      <div className="w-[90%] max-w-md bg-white rounded-lg shadow-lg p-6 mt-6">
+        {/* Title - สมัครสมาชิก */}
+        <h1 className="text-2xl font-bold text-center mb-0">สมัครสมาชิก</h1>
+
+        <form onSubmit={handleRegister}>
+          <label className="flex items-center text-black font-medium mb-1">
+            <FontAwesomeIcon icon={faMobileScreen} className="text-black mr-2" />
+            เบอร์โทรศัพท์
+          </label>
+          <input
+            type="tel"
+            placeholder="ป้อนเบอร์โทรศัพท์"
+            value={phone}
+            onChange={handlePhoneChange}
+            className={`w-full px-4 py-2 border-b-2 ${error && !formValid ? 'border-red-500' : 'border-gray-500'} focus:outline-none`}
+            required
           />
-        </div>
 
-        {/* ฟอร์มลงทะเบียนด้านขวา */}
-        <div className="w-1/2 p-2 flex flex-col items-center -ml-4">
-          <Image
-            src="/images/logo food.png"
-            alt="User Icon"
-            width={250}
-            height={250}
-            className="mb-6"
+          <label className="flex items-center text-black font-medium mb-1 mt-4">
+            ชื่อ
+          </label>
+          <input
+            type="text"
+            placeholder="ป้อนชื่อ"
+            value={name}
+            onChange={handleNameChange}
+            className={`w-full px-4 py-2 border-b-2 ${error && !formValid ? 'border-red-500' : 'border-gray-500'} focus:outline-none`}
+            required
           />
 
-          <form onSubmit={handleSubmit} className="w-full">
-            {/* ฟิลด์ชื่อผู้ใช้ */}
-            <div className="relative mt-1">
-              <FontAwesomeIcon icon={faCircleUser} className="w-[10%] h-[30px] text-gray-500 absolute left-2 top-2.5 ml-6" />
-              <input
-                type="text"
-                placeholder="ชื่อผู้ใช้"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-[90%] h-[50px] pl-14 p-3 border border-gray-300 rounded-lg mb-4 ml-8 text-2xl"
-                required
-              />
-            </div>
+          <label className="flex items-center text-black font-medium mb-1 mt-4">
+            รหัสผ่าน
+          </label>
+          <input
+            type="password"
+            placeholder="ป้อนรหัสผ่าน"
+            value={password}
+            onChange={handlePasswordChange}
+            className={`w-full px-4 py-2 border-b-2 ${error && !formValid ? 'border-red-500' : 'border-gray-500'} focus:outline-none`}
+            required
+          />
 
-            {/* ฟิลด์อีเมล */}
-            <div className="relative mt-1">
-              <FontAwesomeIcon icon={faEnvelope} className="w-[10%] h-[30px] text-gray-500 absolute left-2 top-2.5 ml-6" />
-              <input
-                type="email"
-                placeholder="อีเมล"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-[90%] h-[50px] pl-14 p-3 border border-gray-300 rounded-lg mb-4 ml-8 text-2xl"
-                required
-              />
-            </div>
+          <label className="flex items-center text-black font-medium mb-1 mt-4">
+            ยืนยันรหัสผ่าน
+          </label>
+          <input
+            type="password"
+            placeholder="ยืนยันรหัสผ่าน"
+            value={confirmPassword}
+            onChange={handleConfirmPasswordChange}
+            className={`w-full px-4 py-2 border-b-2 ${error && !formValid ? 'border-red-500' : 'border-gray-500'} focus:outline-none`}
+            required
+          />
 
-            {/* ฟิลด์ password */}
-            <div className="relative mt-4">
-              <FontAwesomeIcon icon={faLock} className="w-[10%] h-[30px] text-gray-500 absolute left-2 top-2.5 ml-6" />
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="รหัสผ่าน"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-14 w-[90%] h-[50px] p-3 border border-gray-300 rounded-lg mb-4 ml-8 text-2xl"
-                required
-              />
-              <button
-                type="button"
-                onClick={togglePasswordVisibility}
-                className="absolute right-7 top-3"
-              >
-                {showPassword ? (
-                  <EyeOff className="h-5 w-5 text-gray-500" />
-                ) : (
-                  <Eye className="h-5 w-5 text-gray-500" />
-                )}
-              </button>
-            </div>
+          {/* Show error message */}
+          {error && !formValid && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
-            <div className="flex justify-center">
-              <Button type="submit" className="mt-2 rounded-xl w-[480px] h-[50px] text-2xl -ml-4">
-                สมัครสมาชิก
-              </Button>
-            </div>
-          </form>
+          <Button type="submit" className="w-full bg-yellow-200 text-black mt-8 py-2 rounded-lg" disabled={!formValid}>
+            สมัครสมาชิก
+          </Button>
+        </form>
+      </div>
 
-          <div className="flex justify-center mt-4">
-            <span className="text-black text-lg">มีบัญชีอยู่แล้ว?</span>
-            <Link
-              className="text-blue-500 underline text-lg hover:text-blue-700 ml-2"
-              href={"/login"}
-            >
-              เข้าสู่ระบบ
-            </Link>
-          </div>
-        </div>
+      {/* Footer */}
+      <div className="absolute bottom-4 text-xs text-gray-600 mb-7">
+        Powered by Nalinee
       </div>
     </div>
   );

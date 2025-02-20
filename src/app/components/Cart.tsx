@@ -13,17 +13,18 @@ const Cart = () => {
   const router = useRouter(); // ใช้ useRouter เพื่อ redirect
 
   const handleConfirmOrder = () => {
-    // สร้าง query string สำหรับส่งข้อมูลสินค้าไปยังหน้า Confirmation
-    const query = cartItems
-      .map(
-        (item) =>
-          `id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(
-            item.name
-          )}&price=${item.price}&quantity=${item.quantity}&image=${encodeURIComponent(item.image)}`
-      )
-      .join("&");
+    console.log("🛒 ตรวจสอบสินค้าในตะกร้า:", cartItems); // Debug
 
-    // Redirect ไปยังหน้าคอนเฟิร์มคำสั่งซื้อพร้อมกับส่งข้อมูลสินค้าผ่าน query string
+    const query = cartItems.map((item) => {
+      console.log("📌 Item:", item); // Debug ข้อมูลสินค้า
+
+      const itemName = item.title || "ไม่มีชื่อ"; // ใช้ item.title แทน item.name
+      return `id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(
+        itemName
+      )}&price=${item.price}&quantity=${item.quantity}&image=${encodeURIComponent(item.imageUrl || item.image)}`;
+    }).join("&");
+
+    console.log("🔗 Query String:", query); // Debug ค่าที่จะถูกส่งไป confirm page
     router.push(`/confirm?${query}`);
   };
 
@@ -56,14 +57,14 @@ const Cart = () => {
                 <div className="flex items-center justify-between ml">
                   <div className="w-20 h-20 relative">
                     <Image
-                      src={item.image}
-                      alt={item.name}
+                      src={item.imageUrl || item.image}
+                      alt={item.title || "ไม่มีชื่อ"} // ใช้ item.title
                       fill
                       className="border-solid border-2 rounded-full ml"
                       sizes="(min-width: 800px) 50vw, 100vw"
                     />
                   </div>
-                  <span>{item.name}</span>
+                  <span>{item.title || "ไม่มีชื่อ"}</span>
 
                   {/* Input สำหรับเปลี่ยนจำนวนสินค้า */}
                   <Input

@@ -135,11 +135,8 @@ const SuccessPage = () => {
     case "Prepare":
       currentStep = 2;
       break;
-    case "Shipping":
-      currentStep = 3;
-      break;
     case "Completed":
-      currentStep = 4;
+      currentStep = 3;
       break;
     default:
       currentStep = 1; // กำหนดค่าเริ่มต้นในกรณีสถานะไม่ตรงเงื่อนไข
