@@ -1,10 +1,10 @@
 import { ShoppingCart } from "lucide-react";
 import { useCart } from "./CartContext"; // ใช้งาน useCart
 import { useRouter } from "next/navigation"; // ใช้ useRouter เพื่อ redirect
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 
 const Cart = () => {
-  const { cartItems, removeFromCart } = useCart(); // ดึงข้อมูลตะกร้าและฟังก์ชัน removeFromCart
+  const { cartItems } = useCart(); // ดึงข้อมูลตะกร้า
   const router = useRouter(); // ใช้ redirect
 
   // ✅ Log เฉพาะกรณีที่มีสินค้าในตะกร้า
@@ -12,23 +12,6 @@ const Cart = () => {
     if (cartItems.length > 0) {
       console.log("📌 สินค้าในตะกร้า (Cart.tsx):", cartItems);
     }
-  }, [cartItems]);
-
-  // ✅ ใช้ useMemo เพื่อป้องกันคำนวณ query ใหม่ทุกครั้ง
-  const query = useMemo(() => {
-    return cartItems
-      .map((item) => {
-        const itemName = item.name || "ไม่มีชื่อ";
-        const itemImage = item.image || "";
-        const shopId = item.shop_id || null;
-
-        return `cart_id=${encodeURIComponent(item.cart_id)}&name=${encodeURIComponent(
-          itemName
-        )}&price=${item.price}&quantity=${item.quantity}&image=${encodeURIComponent(
-          itemImage
-        )}&shop_id=${shopId}`;
-      })
-      .join("&");
   }, [cartItems]);
 
   const handleConfirmOrder = () => {
@@ -39,16 +22,11 @@ const Cart = () => {
       return;
     }
 
-    console.log("🔗 Query String:", query);
-    router.push(`/confirm?${query}`);
+    router.push("/confirm"); // ✅ เปลี่ยนจาก query string เป็น Context หรือ localStorage
   };
-
-  ;
 
   return (
     <div>
-     
-
       {/* ไอคอนตะกร้าบน Header */}
       <div className="cart-icon-container relative cursor-pointer" onClick={handleConfirmOrder}>
         <ShoppingCart className="h-6 w-6" />

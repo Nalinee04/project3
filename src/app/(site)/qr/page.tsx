@@ -127,6 +127,25 @@ export default function QRPage() {
 
   return (
     <div className="flex flex-col items-center p-4 bg-gray-100 min-h-screen">
+      <button
+          className="fixed top-3 left-3 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition"
+          onClick={() => router.back()} // ย้อนกลับไปหน้าก่อนหน้า
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+            className="w-6 h-6 text-gray-700"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </button>
       <div className="w-full max-w-md bg-white shadow-lg rounded-2xl p-6">
         <h1 className="text-xl font-bold text-gray-800 text-center">ข้อมูลการชำระเงิน</h1>
         <div className="flex flex-col items-center my-4">

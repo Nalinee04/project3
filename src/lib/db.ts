@@ -1,26 +1,29 @@
 import mysql, { RowDataPacket } from 'mysql2/promise';
 
-const connection = mysql.createPool({
+const pool = mysql.createPool({
   host: 'localhost',
-  user: 'root', // ชื่อผู้ใช้ฐานข้อมูลของคุณ
-  password: '', // รหัสผ่านผู้ใช้ฐานข้อมูลของคุณ (ค่าเริ่มต้นของ XAMPP มักจะว่างเปล่า)
-  database: 'db_res', // เปลี่ยนชื่อฐานข้อมูลเป็น db_res ตามที่คุณสร้างไว้
+  user: 'root',
+  password: '',
+  database: 'db_res',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 2
 });
 
-// ฟังก์ชันทดสอบการเชื่อมต่อ
+// ฟังก์ชันทดสอบการเชื่อมต่อ (แบบปล่อย Connection)
 async function testConnection() {
+  const connection = await pool.getConnection(); // ดึง Connection จาก Pool
   try {
-    const [rows]: [RowDataPacket[], any] = await connection.query('SELECT 1 + 1 AS solution'); // ระบุประเภทของ rows
-    console.log('Test query result:', rows[0].solution); // ควรแสดง "2"
+    const [rows]: [RowDataPacket[], any] = await connection.query('SELECT 1 + 1 AS solution');
+    console.log('Test query result:', rows[0].solution);
   } catch (error) {
     console.error('Error executing test query:', error);
+  } finally {
+    connection.release(); // ปล่อย Connection กลับไปที่ Pool
   }
 }
 
 // เรียกฟังก์ชันทดสอบการเชื่อมต่อ
 testConnection();
 
-export default connection;
+export default pool;

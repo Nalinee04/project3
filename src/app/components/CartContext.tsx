@@ -9,30 +9,30 @@ interface OptionSelection {
 }
 
 interface CartItem {
-  cart_id: string; // ใช้ cart_id แทน id
-  id: string; // menu_id จริง
-  name: string;
+  cart_id: string;
+  item_id: string;
+  menu_name: string;
   price: number;
-  image: string;
   quantity: number;
-  shop_id: number;
-  options: OptionSelection[];
+  shop_id: string;
+  menu_image: string;
+  item_name?: string;
   note?: string;
+  options?: OptionSelection[]; // ✅ ใช้ options เท่านั้น
 }
 
-// ประเภทของ Context
+
 interface CartContextType {
   cartItems: CartItem[];
+  setCartItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
   addToCart: (item: CartItem) => void;
   removeFromCart: (cart_id: string) => void;
   updateQuantity: (cart_id: string, quantity: number) => void;
   getTotalQuantity: () => number;
 }
 
-// สร้าง Context
 export const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// Hook ใช้งานตะกร้า
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
@@ -41,39 +41,53 @@ export const useCart = () => {
   return context;
 };
 
-// Provider ของตะกร้าสินค้า
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   useEffect(() => {
-    const savedCart = localStorage.getItem("cart");
-    if (savedCart) {
-      try {
-        setCartItems(JSON.parse(savedCart));
-      } catch (error) {
-        console.error("❌ โหลดตะกร้าล้มเหลว:", error);
+    try {
+      const savedCart = localStorage.getItem("cart");
+      if (savedCart) {
+        const parsedCart = JSON.parse(savedCart);
+        console.log("✅ โหลดตะกร้าสำเร็จ:", parsedCart);
+        setCartItems(parsedCart);
       }
+    } catch (error) {
+      console.error("❌ โหลดตะกร้าล้มเหลว:", error);
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cartItems));
+    localStorage.setItem("cart", JSON.stringify(cartItems)); // ✅ อัปเดต localStorage ทุกครั้งที่ cartItems เปลี่ยน
   }, [cartItems]);
 
   const generateCartId = (item: CartItem) => {
-    return `${item.id}-${JSON.stringify(item.options)}-${item.note || ""}`;
+    const optionsString = item.options
+      ? JSON.stringify(
+          item.options.map(o => ({
+            group_id: o.group_id,
+            selected_items: o.selected_items.sort(),
+          }))
+        )
+      : "";
+    return `${item.item_id}-${optionsString}-${item.note || ""}`;
   };
-  
 
-  // เพิ่มสินค้าเข้าไปในตะกร้า
   const addToCart = (item: CartItem) => {
-    const cart_id = generateCartId(item); // สร้าง cart_id
+    const cart_id = generateCartId(item);
 
-    setCartItems((prevItems) => {
-      const existingItem = prevItems.find((cartItem) => cartItem.cart_id === cart_id);
+    setCartItems(prevItems => {
+      if (prevItems.length > 0 && prevItems[0].shop_id !== item.shop_id) {
+        console.log("🛒 ร้านค้าเปลี่ยนจาก", prevItems[0].shop_id, "เป็น", item.shop_id, "ล้างตะกร้า!");
+        const newCart = [{ ...item, cart_id }];
+        localStorage.setItem("cart", JSON.stringify(newCart)); // ✅ อัปเดต localStorage ทันทีเมื่อร้านค้าเปลี่ยน
+        return newCart;
+      }
+
+      const existingItem = prevItems.find(cartItem => cartItem.cart_id === cart_id);
 
       if (existingItem) {
-        return prevItems.map((cartItem) =>
+        return prevItems.map(cartItem =>
           cartItem.cart_id === cart_id
             ? { ...cartItem, quantity: cartItem.quantity + item.quantity }
             : cartItem
@@ -84,27 +98,28 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  // ลบสินค้าจากตะกร้า
   const removeFromCart = (cart_id: string) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item.cart_id !== cart_id));
+    setCartItems(prevItems => {
+      const updatedCart = prevItems.filter(item => item.cart_id !== cart_id);
+      localStorage.setItem("cart", JSON.stringify(updatedCart)); // ✅ อัปเดต localStorage หลังลบสินค้า
+      return updatedCart;
+    });
   };
 
-  // อัปเดตจำนวนสินค้า
   const updateQuantity = (cart_id: string, quantity: number) => {
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
+    setCartItems(prevItems =>
+      prevItems.map(item =>
         item.cart_id === cart_id ? { ...item, quantity } : item
       )
     );
   };
 
-  // คำนวณจำนวนสินค้าทั้งหมดในตะกร้า
   const getTotalQuantity = () => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
   };
 
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, getTotalQuantity }}>
+    <CartContext.Provider value={{ cartItems, setCartItems, addToCart, removeFromCart, updateQuantity, getTotalQuantity }}>
       {children}
     </CartContext.Provider>
   );
