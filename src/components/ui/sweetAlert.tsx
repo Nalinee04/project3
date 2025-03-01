@@ -1,94 +1,93 @@
-// app/utils/SweetAlert.tsx
+// app/components/ui/SweetAlert.tsx
+import { useEffect } from "react";
 import Swal from "sweetalert2";
 
-const SweetAlert = (isRaining: boolean, onConfirm: () => void) => {
-  console.log("SweetAlert called with isRaining:", isRaining); // เพิ่มการล็อกเพื่อดูค่าที่ถูกส่งเข้ามา
+interface SweetAlertProps {
+  orderStatus: string; // รับค่าจาก props เพื่อใช้ตรวจสอบสถานะ
+  onConfirm: () => void;
+}
 
-  const gifUrl = isRaining
-    ? "/images/Chef.gif"
-    : "/images/Deliverytwo.gif";
-
-  const swalWithBootstrapButtons = Swal.mixin({
-    customClass: {
-      confirmButton: "btn btn-success me-2",
-      cancelButton: "btn btn-danger ms-2",
-    },
-    buttonsStyling: false,
-  });
-
-  // แสดง SweetAlert เพื่อยืนยันการส่งคำสั่งซื้อ
-  swalWithBootstrapButtons.fire({
-    title: "ยืนยันการส่งคำสั่งซื้อใช่ไหม?",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "ยืนยัน",
-    cancelButtonText: "ยกเลิก",
-    reverseButtons: false,
-  }).then((result) => {
-    if (result.isConfirmed) {
-      console.log("Order confirmed."); // เพิ่มการล็อกเมื่อสั่งซื้อได้รับการยืนยัน
-      if (isRaining) {
-        handleRainAlert(gifUrl, onConfirm);
-      } else {
-        handleOrderSubmission(onConfirm);
-      }
-    } else if (result.dismiss === Swal.DismissReason.cancel) {
-      swalWithBootstrapButtons.fire({
-        title: "ยกเลิก",
-        text: "คำสั่งซื้อของคุณถูกยกเลิก :)",
-        icon: "error",
-      });
+const SweetAlert: React.FC<SweetAlertProps> = ({ orderStatus, onConfirm }) => {
+  useEffect(() => {
+    if (orderStatus === "เสร็จแล้ว") {
+      Swal.fire({
+        title: "<h3 style='font-size: 18px; font-weight: bold;'>คำสั่งซื้อของคุณเสร็จแล้ว 🎉</h3>",
+        html: "<p style='font-size: 14px;'>กรุณามารับอาหารของคุณได้เลย!</p>",
+        icon: "success",
+        confirmButtonText: "รับทราบ",
+        confirmButtonColor: "#facc15",
+        width: "350px", // ✅ ใช้แค่ width
+        customClass: {
+          popup: "custom-alert-popup",
+          confirmButton: "custom-confirm-button",
+        },
+      }).then(() => {
+        onConfirm();
+      }); // ✅ ปิดวงเล็บที่ถูกต้อง
     }
-  });
-};
+  }, [orderStatus, onConfirm]);
 
-// ฟังก์ชันสำหรับส่งคำสั่งซื้อ
-const handleOrderSubmission = (onConfirm: () => void) => {
-  let timerInterval: ReturnType<typeof setInterval>;
+  const showConfirmAlert = () => {
+    Swal.fire({
+      title: "ยืนยันการส่งคำสั่งซื้อใช่ไหม?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "ยืนยัน",
+      cancelButtonText: "ยกเลิก",
+      reverseButtons: false,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        handleOrderSubmission();
+      } else if (result.dismiss === Swal.DismissReason.cancel) {
+        Swal.fire({
+          title: "ยกเลิก",
+          text: "คำสั่งซื้อของคุณถูกยกเลิก :)",
+          icon: "error",
+        });
+      }
+    });
+  };
 
-  Swal.fire({
-    title: "กำลังส่งคำสั่งซื้อ!",
-    html: "โปรดรอ <b></b> วินาที...",
-    timer: 3000, // ตั้งเวลา 5 วินาที
-    timerProgressBar: true,
-    didOpen: () => {
-      const popup = Swal.getPopup();
-      if (popup) {
-        Swal.showLoading(Swal.getConfirmButton());
-        const timer = popup.querySelector("b");
-        if (timer) {
-          timerInterval = setInterval(() => {
-            const timerLeft = Swal.getTimerLeft();
-            if (timerLeft !== undefined) {
-              timer.textContent = `${Math.ceil(timerLeft / 1000)}`;
-            }
-          }, 100);
+  
+  const handleOrderSubmission = () => {
+    let timerInterval: ReturnType<typeof setInterval>;
+  
+    Swal.fire({
+      title: "กำลังส่งคำสั่งซื้อ!",
+      html: "โปรดรอ <b></b> วินาที...",
+      timer: 3000, // ตั้งเวลา 3 วินาที
+      timerProgressBar: true,
+      didOpen: () => {
+        const popup = Swal.getPopup();
+        if (popup) {
+          const confirmButton = Swal.getConfirmButton();
+          if (confirmButton) {
+            Swal.showLoading(confirmButton); // ✅ แก้ไขตรงนี้
+          }
+  
+          const timer = popup.querySelector("b");
+          if (timer) {
+            timerInterval = setInterval(() => {
+              const timerLeft = Swal.getTimerLeft();
+              if (timerLeft !== undefined) {
+                timer.textContent = `${Math.ceil(timerLeft / 1000)}`;
+              }
+            }, 100);
+          }
         }
+      },
+      willClose: () => {
+        clearInterval(timerInterval);
+      },
+    }).then((result) => {
+      if (result.dismiss === Swal.DismissReason.timer) {
+        onConfirm(); // ✅ เรียกฟังก์ชันหลังจากส่งสำเร็จ
       }
-    },
-    willClose: () => {
-      clearInterval(timerInterval);
-    },
-  }).then((result) => {
-    if (result.dismiss === Swal.DismissReason.timer) {
-      console.log("Order confirmed and redirected to success page.");
-      onConfirm(); // เรียกฟังก์ชันไปยัง success page
-    }
-  });
-};
+    });
+  };
+  
 
-// ฟังก์ชันสำหรับแจ้งเตือนฝนตก
-const handleRainAlert = (gifUrl: string, onConfirm: () => void) => {
-  Swal.fire({
-    title: "กำลังจัดเตรียมอาหาร โปรดรอซักครู่",
-    imageUrl: gifUrl,
-    imageHeight: 300,
-    imageAlt: "เตรียมอาหาร",
-    confirmButtonText: "รับทราบ",
-  }).then(() => {
-    console.log("Order confirmed with rain alert."); // เพิ่มการล็อกเมื่อมีการแจ้งเตือนฝนตก
-    onConfirm(); // ไปยัง success page โดยอัตโนมัติ
-  });
+  return null; // ✅ คอมโพเนนต์ไม่มี UI โดยตรง แค่ทำหน้าที่แจ้งเตือน
 };
 
 export default SweetAlert;

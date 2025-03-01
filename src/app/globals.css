@@ -1,19 +1,20 @@
 @tailwind base;
+
+ /* คลาสสำหรับซ่อน scrollbar */
+ .scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+}
+
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+  --foreground: 0, 0, 0;  /* สีข้อความเป็นสีดำในโหมดปกติ */
+  --background: 255, 255, 255;  /* พื้นหลังเป็นสีขาวในโหมดปกติ */
 }
 
 @layer utilities {
@@ -24,8 +25,8 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 20 14.3% 4.1%;
+    --background: 255, 255, 255;  /* พื้นหลังเป็นสีขาว */
+    --foreground: 0, 0, 0;  /* สีข้อความเป็นสีดำ */
     --card: 0 0% 100%;
     --card-foreground: 20 14.3% 4.1%;
     --popover: 0 0% 100%;
@@ -51,41 +52,127 @@
     --chart-5: 27 87% 67%;
   }
 
-  .dark {
-    --background: 20 14.3% 4.1%;
-    --foreground: 60 9.1% 97.8%;
-    --card: 20 14.3% 4.1%;
-    --card-foreground: 60 9.1% 97.8%;
-    --popover: 20 14.3% 4.1%;
-    --popover-foreground: 60 9.1% 97.8%;
-    --primary: 60 9.1% 97.8%;
-    --primary-foreground: 24 9.8% 10%;
-    --secondary: 12 6.5% 15.1%;
-    --secondary-foreground: 60 9.1% 97.8%;
-    --muted: 12 6.5% 15.1%;
-    --muted-foreground: 24 5.4% 63.9%;
-    --accent: 12 6.5% 15.1%;
-    --accent-foreground: 60 9.1% 97.8%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 60 9.1% 97.8%;
-    --border: 12 6.5% 15.1%;
-    --input: 12 6.5% 15.1%;
-    --ring: 24 5.7% 82.9%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+  /* ปุ่มที่มีการกด */
+  .button-press {
+    display: inline-block;
+    cursor: pointer;
+    transition: transform 0.1s ease, opacity 0.1s ease; /* เพิ่ม transition */
   }
-}
 
-
-
-@layer base {
-  * {
-    @apply border-border;
+  /* ปุ่มเมื่อถูกกด */
+  .button-press:active {
+    transform: scale(0.95); /* ขนาดลดลงเมื่อกด */
+    opacity: 0.8;  /* ลดความทึบลง */
   }
-  body {
-    @apply bg-background text-foreground;
+
+  .custom-progress-bar {
+    background-color: #15fa3b !important; /* สีเหลือง */
+    height: 6px !important; /* ปรับความสูงให้ดูเด่นขึ้น */
+    border-radius: 16px !important; /* ทำให้ Progress Bar โค้ง */
+  }
+
+  /* เส้นโหลด (Loading Bar) */
+  .loading-bar {
+    width: 100%;
+    height: 4px;
+    background-color: #e0e0e0;
+    position: relative;
+    overflow: hidden;
+  }
+  .loading-bar::after {
+    content: "";
+    position: absolute;
+    width: 30%;
+    height: 100%;
+    background-color: #30fa15; /* สีเหลือง */
+    animation: loadingAnimation 1.5s linear infinite;
+  }
+  @keyframes loadingAnimation {
+    0% { left: -30%; }
+    100% { left: 100%; }
+  }
+
+  /* ไอคอนหมุน (Spinner) */
+  .spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-top: 4px solid #facc15; /* สีเหลือง */
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 2s linear infinite;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* ปรับขนาดของ SweetAlert */
+  .swal2-popup {
+    width: 80% !important;
+    max-width: 350px !important;
+    border-radius: 12px !important;
+    padding: 24px 16px !important;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  /* ปรับขนาดไอคอนเช็คถูก */
+  .swal2-success {
+    transform: scale(0.8) !important; /* ย่อให้เล็กลง */
+  }
+
+  /* ปรับปุ่มให้กว้างขึ้น */
+  .swal2-confirm {
+    width: 80% !important;
+    border-radius: 8px !important;
+    font-size: 18px !important;
+    padding: 10px !important;
+    background-color: #facc15 !important; /* สีเหลือง */
+    color: #000 !important;
+    font-weight: bold !important;
+  }
+
+  .Toastify__toast-container {
+    width: 100% !important;  /* ทำให้กว้างเต็มจอ */
+    max-width: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+  }
+
+  .dialog-content {
+    background-color: #ffffff !important;
+    border-radius: 16px !important;
+    padding: 1.5rem !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  
+
+  .Toastify__toast {
+    width: 100% !important;  
+    border-radius: 16px !important; /* ขอบโค้งทุกด้าน */
+    text-align: center !important;
+    font-size: 50px !important; /* ปรับขนาดตัวอักษร */
+    font-weight: bold !important; /* ทำให้ตัวหนา */
+    padding: 40px !important; /* เพิ่ม padding ให้สูงขึ้น */
+    min-height: 100px !important; /* กำหนดความสูงขั้นต่ำ */
+    display: flex !important;
+    align-items: center !important; /* จัดให้อยู่ตรงกลาง */
+    justify-content: center !important;
+    color: #000 !important; /* สีตัวอักษรดำ */
+    background-color: #fff !important; /* พื้นหลังขาว */
+  }
+
+  .sheet-content {
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  @layer base {
+    * {
+      @apply border-border;
+    }
+    body {
+      @apply bg-[rgb(var(--background))] text-[rgb(var(--foreground))];  /* ใช้ตัวแปรสีสำหรับพื้นหลังและข้อความ */
+    }
   }
 }

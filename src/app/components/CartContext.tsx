@@ -1,28 +1,38 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-// สร้างชนิดข้อมูลสำหรับสินค้าในตะกร้า
+// ประเภทตัวเลือกของสินค้า
+interface OptionSelection {
+  group_id: number;
+  selected_items: number[];
+}
+
 interface CartItem {
-  id: string;
+  cart_id: string; // ใช้ cart_id แทน id
+  id: string; // menu_id จริง
   name: string;
   price: number;
   image: string;
   quantity: number;
+  shop_id: number;
+  options: OptionSelection[];
+  note?: string;
 }
 
-// สร้างชนิดข้อมูลสำหรับ CartContext
+// ประเภทของ Context
 interface CartContextType {
   cartItems: CartItem[];
   addToCart: (item: CartItem) => void;
-  removeFromCart: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  removeFromCart: (cart_id: string) => void;
+  updateQuantity: (cart_id: string, quantity: number) => void;
+  getTotalQuantity: () => number;
 }
 
-// สร้าง Context สำหรับ Cart
-const CartContext = createContext<CartContextType | undefined>(undefined);
+// สร้าง Context
+export const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// ฟังก์ชัน useCart สำหรับการใช้ context
+// Hook ใช้งานตะกร้า
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
@@ -31,34 +41,70 @@ export const useCart = () => {
   return context;
 };
 
-// ฟังก์ชัน CartProvider ที่ครอบคลุม context ให้กับ component อื่นๆ
+// Provider ของตะกร้าสินค้า
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
+  useEffect(() => {
+    const savedCart = localStorage.getItem("cart");
+    if (savedCart) {
+      try {
+        setCartItems(JSON.parse(savedCart));
+      } catch (error) {
+        console.error("❌ โหลดตะกร้าล้มเหลว:", error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("cart", JSON.stringify(cartItems));
+  }, [cartItems]);
+
+  const generateCartId = (item: CartItem) => {
+    return `${item.id}-${JSON.stringify(item.options)}-${item.note || ""}`;
+  };
+  
+
+  // เพิ่มสินค้าเข้าไปในตะกร้า
   const addToCart = (item: CartItem) => {
+    const cart_id = generateCartId(item); // สร้าง cart_id
+
     setCartItems((prevItems) => {
-      const existingItem = prevItems.find((cartItem) => cartItem.id === item.id);
+      const existingItem = prevItems.find((cartItem) => cartItem.cart_id === cart_id);
+
       if (existingItem) {
         return prevItems.map((cartItem) =>
-          cartItem.id === item.id ? { ...cartItem, quantity: cartItem.quantity + 1 } : cartItem
+          cartItem.cart_id === cart_id
+            ? { ...cartItem, quantity: cartItem.quantity + item.quantity }
+            : cartItem
         );
       }
-      return [...prevItems, { ...item, quantity: 1 }];
+
+      return [...prevItems, { ...item, cart_id }];
     });
   };
 
-  const removeFromCart = (id: string) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item.id !== id));
+  // ลบสินค้าจากตะกร้า
+  const removeFromCart = (cart_id: string) => {
+    setCartItems((prevItems) => prevItems.filter((item) => item.cart_id !== cart_id));
   };
 
-  const updateQuantity = (id: string, quantity: number) => {
+  // อัปเดตจำนวนสินค้า
+  const updateQuantity = (cart_id: string, quantity: number) => {
     setCartItems((prevItems) =>
-      prevItems.map((item) => (item.id === id ? { ...item, quantity } : item))
+      prevItems.map((item) =>
+        item.cart_id === cart_id ? { ...item, quantity } : item
+      )
     );
   };
 
+  // คำนวณจำนวนสินค้าทั้งหมดในตะกร้า
+  const getTotalQuantity = () => {
+    return cartItems.reduce((total, item) => total + item.quantity, 0);
+  };
+
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity }}>
+    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, getTotalQuantity }}>
       {children}
     </CartContext.Provider>
   );

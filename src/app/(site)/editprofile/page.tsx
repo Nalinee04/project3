@@ -123,7 +123,7 @@ const EditProfilePage = () => {
 
     setIsSaving(true);
     try {
-      const response = await fetch("/api/editpro", {
+      const response = await fetch("/api/edit", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

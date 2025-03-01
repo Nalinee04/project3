@@ -13,7 +13,13 @@ interface Order {
   deliveryTime: string; // เพิ่มฟิลด์ deliveryTime
   status: string;
   is_rainy?: boolean; // เปลี่ยนเป็น is_rainy
-  items: { id: string; name: string; price: number; quantity: number; image: string }[]; // Items in the order
+  items: {
+    item_id: string;
+    menu_name: string;
+    price: number;
+    quantity: number;
+    menu_image: string;
+  }[]; // Items in the order
 }
 
 const OrderHistoryPage = () => {
@@ -25,14 +31,21 @@ const OrderHistoryPage = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await fetch('/api/orders'); // เปลี่ยนเป็น endpoint ที่คุณใช้ดึงข้อมูลออเดอร์
+        const response = await fetch("/api/history");
+
         if (!response.ok) {
-          throw new Error('Network response was not ok');
+          throw new Error("Network response was not ok");
         }
         const data = await response.json();
-        setOrders(data); // Load orders for the specific user
+
+        // กรองเฉพาะออเดอร์ที่มีสถานะ "เสร็จแล้ว"
+        const completedOrders = data.filter(
+          (order: Order) => order.status === "เสร็จแล้ว"
+        );
+
+        setOrders(completedOrders);
       } catch (error) {
-        console.error('Error fetching orders:', error);
+        console.error("Error fetching orders:", error);
       }
     };
 
@@ -51,12 +64,14 @@ const OrderHistoryPage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white shadow p-6 rounded w-full max-w-md text-center">
-          <h2 className="text-lg font-semibold">No Orders Found</h2>
+          <h2 className="text-lg font-semibold">
+            ยังไม่มีคำสั่งซื้อที่เสร็จแล้ว
+          </h2>
           <button
             className="bg-black text-white px-4 py-2 rounded mt-4"
             onClick={() => router.push("/home")}
           >
-            Back to Home
+            เริ่มสั่งซื้อเลย
           </button>
         </div>
       </div>
@@ -75,14 +90,28 @@ const OrderHistoryPage = () => {
             onClick={() => handleOrderClick(order)}
           >
             <div>
-              <h3 className="text-md font-semibold">Order #{order.order_number}</h3>
+              <h3 className="text-md font-semibold">
+                Order #{order.order_number}
+              </h3>
               <div className="text-sm text-gray-600">
                 <p>Customer: {order.customer_name}</p>
                 <p>Date: {new Date(order.created_at).toLocaleDateString()}</p>
-                <p>Time: {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                <p>
+                  Time:{" "}
+                  {new Date(order.created_at).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
               </div>
             </div>
-            <span className={`text-sm py-1 px-2 rounded-full ml-4 ${order.status === "Completed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
+            <span
+              className={`text-sm py-1 px-2 rounded-full ml-4 ${
+                order.status === "เสร็จแล้ว"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-yellow-100 text-yellow-700"
+              }`}
+            >
               {order.status}
             </span>
           </div>
@@ -93,28 +122,48 @@ const OrderHistoryPage = () => {
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
             <div className="bg-white rounded-lg shadow-lg p-4 w-11/12 max-w-md">
               <h2 className="text-lg font-bold mb-2">Order Details</h2>
-              <h3 className="text-md font-semibold">Order #{selectedOrder.order_number}</h3>
+              <h3 className="text-md font-semibold">
+                Order #{selectedOrder.order_number}
+              </h3>
               <p>Customer: {selectedOrder.customer_name}</p>
-              <p>Date: {new Date(selectedOrder.created_at).toLocaleDateString()}</p>
-              <p>Time: {new Date(selectedOrder.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+              <p>
+                Date: {new Date(selectedOrder.created_at).toLocaleDateString()}
+              </p>
+              <p>
+                Time:{" "}
+                {new Date(selectedOrder.created_at).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
               <p>Status: {selectedOrder.status}</p>
               <h3 className="text-md font-semibold mt-4">Items:</h3>
               {selectedOrder.items.map((item) => (
-                <div key={item.id} className="flex justify-between mb-1">
+                <div key={item.item_id} className="flex justify-between mb-1">
                   <div className="flex items-center gap-2">
                     <img
-                      src={item.image}
-                      alt={item.name}
+                      src={item.menu_image}
+                      alt={item.menu_name}
                       className="h-8 w-8 rounded-md"
                     />
-                    <span>{item.name} (x{item.quantity})</span>
+                    <span>
+                      {item.menu_name} (x{item.quantity})
+                    </span>
                   </div>
                   <span>฿{(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
               <div className="flex justify-between font-semibold mt-2">
                 <span>Total:</span>
-                <span>฿{selectedOrder.items.reduce((total, item) => total + item.price * item.quantity, 0).toFixed(2)}</span>
+                <span>
+                  ฿
+                  {selectedOrder.items
+                    .reduce(
+                      (total, item) => total + item.price * item.quantity,
+                      0
+                    )
+                    .toFixed(2)}
+                </span>
               </div>
               <h3 className="text-md font-semibold mt-4">Shipping Address:</h3>
               <p>{selectedOrder.shipping_address}</p>

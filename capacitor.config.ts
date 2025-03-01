@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.nalinee.srufood',
-  appName: 'srufood',
+  appId: 'com.example.app',
+  appName: 'my-test',
   webDir: 'public'
 };
 
