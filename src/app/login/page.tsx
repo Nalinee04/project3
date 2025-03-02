@@ -26,11 +26,14 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
+      console.log("🔑 กำลังพยายามเข้าสู่ระบบ...");
       const result = await signIn("credentials", {
         redirect: false,
         phone: phone,
         password: password,
       });
+
+      console.log("🔑 ผลลัพธ์จากการล็อกอิน:", result);
 
       if (!result?.ok) {
         throw new Error(result?.error || "เข้าสู่ระบบไม่สำเร็จ");
@@ -38,6 +41,8 @@ const LoginPage = () => {
 
       const res = await fetch("/api/auth/session");
       const session = await res.json();
+
+      console.log("🔑 ข้อมูล session ที่ได้รับ:", session);
 
       if (!session?.user) {
         throw new Error("ไม่สามารถโหลดข้อมูลผู้ใช้ได้");
@@ -48,6 +53,7 @@ const LoginPage = () => {
         const response = await fetch(`/api/checkShop?phone=${phoneNumber}`);
         const data = await response.json();
         setIsShop(data.isShop);
+        console.log("🔑 ร้านคือ: ", data.isShop);
       };
 
       // ตรวจสอบการลงทะเบียน
@@ -55,6 +61,7 @@ const LoginPage = () => {
         const response = await fetch(`/api/checkUser?phone=${phoneNumber}`);
         const data = await response.json();
         setIsRegistered(data.exists);
+        console.log("🔑 การลงทะเบียน: ", data.exists);
       };
 
       // ตรวจสอบเมื่อกรอกเบอร์โทรศัพท์
@@ -66,18 +73,22 @@ const LoginPage = () => {
       // แสดงไอคอนหมุนก่อน 2 วินาที
       setTimeout(() => {
         setProgressVisible(true); // แสดง Progress Bar
+        console.log("🔑 แสดง Progress Bar");
       }, 2000);
 
       // ไปยังหน้าโฮมหลังจาก 2 วินาที
       setTimeout(() => {
         if (session.user.role === "shop") {
+          console.log("🔑 ไปยังหน้า Dashboard ของร้าน");
           router.push("/restaurant/dashboard");
         } else {
+          console.log("🔑 ไปยังหน้า Home");
           router.push("/home");
         }
       }, 4500); // แสดง Progress Bar นาน 2.5 วินาที ก่อนเปลี่ยนหน้า
     } catch (error: any) {
       toast.error(error.message);
+      console.error("🔑 เกิดข้อผิดพลาดในการล็อกอิน: ", error);
     } finally {
       setLoading(false);
     }

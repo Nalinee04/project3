@@ -155,7 +155,7 @@ const MenuDetailPage = () => {
     if (!menu || isAdding || isLoading) return;
     setIsAdding(true);
     setIsLoading(true);
-
+  
     const cartItem = {
       cart_id: Date.now().toString(),
       item_id: menu.menu_id.toString(), // เปลี่ยนจาก id เป็น item_id
@@ -170,15 +170,19 @@ const MenuDetailPage = () => {
       })),
       note,
     };
-
+  
+    // เก็บค่า note ลงใน localStorage สำหรับเมนูนั้นและร้านนั้น
+  localStorage.setItem(`orderNote_${menu.shop_id}_${menu.menu_id}`, note);
+  
+    // เพิ่มสินค้าไปที่ตะกร้า
     addToCart(cartItem); // ✅ ใช้งานได้ถูกต้อง
-
+  
     setTimeout(() => {
       setIsAdding(false);
       setIsLoading(false);
     }, 1000);
   };
-
+  
   if (!menu) {
     return null;
   }

@@ -3,7 +3,6 @@ import connection from "@/lib/db";
 import { FieldPacket } from "mysql2";
 import { authenticateToken } from "@/lib/middleware";
 
-// 📌 ดึงรายการ order_items พร้อมสถานะคำสั่งซื้อ
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const orderId = url.searchParams.get("order_id");
@@ -14,10 +13,11 @@ export async function GET(req: Request) {
 
   console.log("🔍 Fetching order_items for order_id:", orderId);
 
-  const user = authenticateToken(req);
-  if (!user) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  // ลบการตรวจสอบสิทธิ์ออก
+  // const user = authenticateToken(req);
+  // if (!user) {
+  //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  // }
 
   try {
     if (!connection) throw new Error("Database connection is not established.");

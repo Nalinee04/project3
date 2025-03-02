@@ -28,16 +28,27 @@ interface OptionSelection {
 const ConfirmationPage = () => {
   const router = useRouter();
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
+  const [restaurantNote, setRestaurantNote] = useState<string>(""); // เพิ่มการตั้งค่า note
   const [userName, setUserName] = useState<string | null>(null);
   const [shopId, setShopId] = useState<string | null>(null);
   const [deliveryType, setDeliveryType] = useState(""); // ทำให้เริ่มต้นเป็นค่าว่าง
 
   const [outOfStockAction, setOutOfStockAction] = useState(""); // ทำให้เริ่มต้นเป็นค่าว่าง
 
-  const [restaurantNote, setRestaurantNote] = useState("");
   const [paymentMethod, setPaymentMethod] = useState(""); // ทำให้เริ่มต้นเป็นค่าว่าง
   const { cartItems, setCartItems } = useCart(); // ✅ เพิ่ม setCartItems ให้ใช้งานได้
   const shopIdFromCart = cartItems.length > 0 ? cartItems[0].shop_id : null;
+
+   // ดึงค่า note จาก localStorage เมื่อคอมโพเนนต์โหลด
+   useEffect(() => {
+    const savedNote = localStorage.getItem("orderNote");
+    if (savedNote) {
+      setRestaurantNote(savedNote); // ตั้งค่าที่ดึงมาใน state
+      console.log("Note from localStorage:", savedNote); // ลองตรวจสอบค่าที่ดึงมา
+    }
+  }, []); // ดึงค่าเพียงครั้งเดียวเมื่อคอมโพเนนต์ถูกโหลด
+
+  
 
   const isOrderValid =
     cartItems.length > 0 &&
@@ -67,6 +78,12 @@ const ConfirmationPage = () => {
       }
     });
   };
+
+  const savedNote = localStorage.getItem("orderNote");
+if (savedNote) {
+  console.log("Note from localStorage:", savedNote);
+  // ใช้ savedNote ในหน้า QR หรือหน้า confirm
+}
 
   useEffect(() => {
     if (!shopId && cartItems.length > 0) {
@@ -101,7 +118,11 @@ const ConfirmationPage = () => {
       Swal.fire("เกิดข้อผิดพลาด", "กรุณาเลือกทุกตัวเลือก", "error");
       return;
     }
-    // ถ้ามีการเลือกครบทั้ง 3 ตัวเลือกและตะกร้ามีสินค้าแล้ว
+  
+
+    // เก็บ restaurantNote ลงใน localStorage
+    localStorage.setItem("orderNote", restaurantNote);
+
     const totalAmount = cartItems.reduce(
       (total, item) => total + item.price,
       0

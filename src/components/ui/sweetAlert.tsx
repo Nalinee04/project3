@@ -62,7 +62,7 @@ const SweetAlert: React.FC<SweetAlertProps> = ({ orderStatus, onConfirm }) => {
         if (popup) {
           const confirmButton = Swal.getConfirmButton();
           if (confirmButton) {
-            Swal.showLoading(confirmButton); // ✅ แก้ไขตรงนี้
+            Swal.showLoading(confirmButton); 
           }
   
           const timer = popup.querySelector("b");

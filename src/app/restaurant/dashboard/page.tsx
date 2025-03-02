@@ -115,12 +115,12 @@ const Dashboard = () => {
     <div className="min-h-screen flex flex-col p-8 bg-gray-50">
       {/* Header */}
       <div className="flex items-center justify-between bg-yellow-500 text-white p-4 rounded-lg shadow-md mb-6">
-        <h1 className="text-3xl font-semibold">📊 Dashboard</h1>
-        <div className="flex items-center space-x-4">
-          <Switch checked={isOpen} onCheckedChange={handleSwitchChange}>
-            <span className="text-lg">{isOpen ? "เปิดร้าน" : "ปิดร้าน"}</span>
-          </Switch>
-        </div>
+      <header className="w-full bg-yellow-500 text-white py-4 px-6 flex justify-between items-center shadow-md fixed top-0 left-0 right-0 z-10">
+        <h1 className="text-2xl font-semibold">📊 Dashboard</h1>
+        <Switch checked={isOpen} onCheckedChange={() => setIsOpen(!isOpen)}>
+          <span className="text-lg">{isOpen ? "เปิดร้าน" : "ปิดร้าน"}</span>
+        </Switch>
+      </header>
       </div>
 
       {/* Sales Summary */}

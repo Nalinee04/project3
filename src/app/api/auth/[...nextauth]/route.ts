@@ -60,7 +60,7 @@ export const authOptions: AuthOptions = {
         const query = `
           SELECT user_id AS id, name, phone, image, password, 'user' AS role, NULL AS shop_id FROM users WHERE phone = ? 
           UNION
-          SELECT shop_id AS id, shop_name AS name, phone_number AS phone, shop_image AS image, password, 'shop' AS role, shop_id FROM shops WHERE phone_number = ?
+          SELECT shop_id AS id, shop_name AS name, phone_number AS phone, shop_image AS image, password, 'shop' AS role, shop_id FROM shops WHERE phone_number = ? 
           LIMIT 1;
         `;
         const values = [credentials.phone, credentials.phone];
@@ -105,6 +105,17 @@ export const authOptions: AuthOptions = {
   ],
   session: {
     strategy: "jwt",
+  },
+  cookies: {
+    sessionToken: {
+      name: 'next-auth.session-token',  // ชื่อ cookie ที่จะใช้เก็บ session
+      options: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",  // ใช้ secure cookie ใน production
+        sameSite: 'Lax',  // ป้องกันการส่ง cookie จาก cross-site request
+        path: '/', // ใช้ path ทั้งหมด
+      },
+    },
   },
   callbacks: {
     async jwt({ token, user }) {
