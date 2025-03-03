@@ -1,131 +1,162 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { FiImage } from "react-icons/fi"; // ไอคอนรูปภาพจาก react-icons
+import { ArrowLeft, CheckCircle, XCircle, Image as ImageIcon } from "lucide-react";
+import Swal from "sweetalert2";
 
 const AddMenu = () => {
   const router = useRouter();
-  const { data: session, status: sessionStatus } = useSession(); // เปลี่ยนชื่อ status เป็น sessionStatus
+  const { data: session } = useSession();
   const [menuName, setMenuName] = useState("");
-  const [price, setPrice] = useState<number>(0);
+  const [price, setPrice] = useState<number | "">("");
   const [category, setCategory] = useState<number>(0);
-  const [status, setStatus] = useState<number>(1); // ใช้ status สำหรับสถานะของเมนู
-  const [menuImage, setMenuImage] = useState<File | null>(null);
+  const [status, setStatus] = useState<number>(1);
+  const [categories, setCategories] = useState<{ cate_id: number; cate_name: string }[]>([]);
+  const [imageUrl, setImageUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setMenuImage(e.target.files[0]);
-    }
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch("/api/categories");
+        const data = await res.json();
+        if (!data.error) setCategories(data);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const imageUrl = URL.createObjectURL(file);
+    setImageUrl(imageUrl);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!imageUrl) return setError("กรุณาเลือกรูปภาพ");
 
-    if (!menuName || price <= 0 || category <= 0 || !menuImage) {
-      setError("กรุณากรอกข้อมูลให้ครบถ้วน");
-      return;
-    }
+    const menuData = {
+      shop_id: String(session?.user?.shop_id),
+      menu_name: menuName,
+      price: String(price),
+      cate_id: String(category),
+      status: String(status),
+      menu_image: imageUrl,
+    };
 
-    const formData = new FormData();
-    formData.append("shop_id", String(session?.user?.shop_id));
-    formData.append("menu_name", menuName);
-    formData.append("price", String(price));
-    formData.append("cate_id", String(category));
-    formData.append("status", String(status)); // ส่งสถานะเมนูที่เลือก
-    formData.append("menu_image", menuImage);
+    const res = await fetch("/api/menu", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(menuData),
+    });
 
-    try {
-      const res = await fetch("/api/menu", {
-        method: "POST",
-        body: formData,
+    const data = await res.json();
+    if (data.error) setError(data.error);
+    else {
+      Swal.fire({
+        title: "เพิ่มเมนูสำเร็จ!",
+        icon: "success",
+        draggable: true,
+      }).then(() => {
+        router.push("/restaurant/menu");
       });
-
-      const data = await res.json();
-
-      if (data.error) {
-        setError(data.error);
-      } else {
-        router.push("/restaurant/menu"); // กลับไปที่หน้าจัดการเมนู
-      }
-    } catch (error) {
-      setError("เกิดข้อผิดพลาดในการเพิ่มเมนู");
     }
   };
 
   return (
-    <div className="p-4 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-4">เพิ่มเมนูใหม่</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700">ชื่อเมนู</label>
+    <div className="p-6 bg-gray-100 min-h-screen">
+      <header className="w-full bg-yellow-500 text-white py-4 px-6 flex items-center shadow-md fixed top-0 left-0 right-0 z-10">
+        <button onClick={() => router.back()} className="p-2">
+          <ArrowLeft className="h-6 w-6 text-white" />
+        </button>
+        <h1 className="text-lg font-semibold mx-auto">เพิ่มเมนูใหม่</h1>
+      </header>
+
+      <div className="bg-white p-6 rounded-lg shadow-md mt-16">
+        <h1 className="text-2xl font-semibold text-gray-800 mb-4">เพิ่มเมนูใหม่</h1>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
           <input
             type="text"
             value={menuName}
             onChange={(e) => setMenuName(e.target.value)}
-            className="w-full p-2 border rounded-md mt-1"
+            className="w-full p-3 border rounded-md"
+            placeholder="ชื่อเมนู"
             required
           />
-        </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-gray-700">ราคา</label>
           <input
-            type="number"
+            type="text"
             value={price}
-            onChange={(e) => setPrice(Number(e.target.value))}
-            className="w-full p-2 border rounded-md mt-1"
+            onChange={(e) => {
+              const value = e.target.value.replace(/[^0-9]/g, "");
+              setPrice(value === "" ? "" : Number(value));
+            }}
+            className="w-full p-3 border rounded-md"
+            placeholder="ราคา (บาท)"
             required
           />
-        </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-gray-700">หมวดหมู่</label>
           <select
             value={category}
             onChange={(e) => setCategory(Number(e.target.value))}
-            className="w-full p-2 border rounded-md mt-1"
+            className="w-full p-3 border rounded-md"
             required
           >
             <option value={0}>เลือกหมวดหมู่</option>
-            <option value={1}>อาหาร</option>
-            <option value={2}>เครื่องดื่ม</option>
-            <option value={3}>ของหวาน</option>
+            {categories.map((cate) => (
+              <option key={cate.cate_id} value={cate.cate_id}>
+                {cate.cate_name}
+              </option>
+            ))}
           </select>
-        </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-gray-700">สถานะ</label>
           <select
             value={status}
             onChange={(e) => setStatus(Number(e.target.value))}
-            className="w-full p-2 border rounded-md mt-1"
+            className="w-full p-3 border rounded-md"
           >
-            <option value={1}>เปิด</option>
-            <option value={0}>ปิด</option>
+            <option value={1}>เปิดเมนู</option>
+            <option value={0}>ปิดเมนู</option>
           </select>
-        </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-gray-700">รูปภาพเมนู</label>
-          <input
-            type="file"
-            onChange={handleImageChange}
-            accept="image/*"
-            className="w-full p-2 border rounded-md mt-1"
-            required
-          />
-          <FiImage size={20} className="mt-2" />
-        </div>
+          <div className="border p-4 rounded-lg text-center">
+            <label className="cursor-pointer">
+              <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+              {imageUrl ? (
+                <img src={imageUrl} alt="Preview" className="w-full h-40 object-cover rounded-md" />
+              ) : (
+                <div className="flex flex-col items-center justify-center text-gray-500">
+                  <ImageIcon className="h-12 w-12" />
+                  <p>อัปโหลดรูปภาพ</p>
+                </div>
+              )}
+            </label>
+          </div>
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+          <button
+            type="submit"
+            className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 rounded-md"
+          >
+            เพิ่มเมนู
+          </button>
 
-        <button type="submit" className="bg-yellow-500 text-white py-2 px-4 rounded-md">
-          เพิ่มเมนู
-        </button>
-      </form>
+          {error && (
+            <div className="flex items-center text-red-600 mt-2">
+              <XCircle className="h-5 w-5 mr-1" />
+              <p className="text-sm">{error}</p>
+            </div>
+          )}
+        </form>
+      </div>
     </div>
   );
 };

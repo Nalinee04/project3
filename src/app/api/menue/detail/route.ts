@@ -1,3 +1,4 @@
+//app/menue/detail/route.ts
 import { NextResponse } from "next/server";
 import connection from "@/lib/db";
 import { RowDataPacket } from "mysql2";

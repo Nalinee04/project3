@@ -9,7 +9,6 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import BottomNavRestaurant from "@/app/components/BottomNavRestaurant";
 
-
 interface Order {
   order_id: number;
   order_number: string;
@@ -114,17 +113,17 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen flex flex-col p-8 bg-gray-50">
       {/* Header */}
-      <div className="flex items-center justify-between bg-yellow-500 text-white p-4 rounded-lg shadow-md mb-6">
-      <header className="w-full bg-yellow-500 text-white py-4 px-6 flex justify-between items-center shadow-md fixed top-0 left-0 right-0 z-10">
-        <h1 className="text-2xl font-semibold">📊 Dashboard</h1>
-        <Switch checked={isOpen} onCheckedChange={() => setIsOpen(!isOpen)}>
-          <span className="text-lg">{isOpen ? "เปิดร้าน" : "ปิดร้าน"}</span>
-        </Switch>
-      </header>
+      <div className="w-full fixed top-0 left-0 right-0 bg-yellow-500 text-white px-6 py-4 shadow-md flex items-center justify-between">
+        <h1 className="text-3xl font-semibold">📊 Dashboard</h1>
+        <div className="flex items-center space-x-2">
+          <Switch checked={isOpen} onCheckedChange={() => setIsOpen(!isOpen)}>
+            <span className="text-lg">{isOpen ? "" : ""}</span>
+          </Switch>
+        </div>
       </div>
 
       {/* Sales Summary */}
-      <Card className="shadow-xl bg-white rounded-lg border border-gray-200 p-6 mb-6">
+      <Card className="shadow-xl bg-white rounded-lg border border-gray-200 p-6 mb-6 mt-20">
         <CardContent>
           <h2 className="text-xl font-semibold text-gray-800 mb-4">
             💰 ยอดขาย
@@ -190,7 +189,6 @@ const Dashboard = () => {
       </div>
       <BottomNavRestaurant /> {/* ✅ ใส่ใน return */}
     </div>
-    
   );
 };
 
