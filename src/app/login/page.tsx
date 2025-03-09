@@ -1,3 +1,4 @@
+
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -162,7 +163,7 @@ const LoginPage = () => {
 
           <Button
             type="submit"
-            className="w-full bg-yellow-100 py-2 rounded-lg shadow-lg hover:bg-yellow-600 transition"
+            className="w-full bg-yellow-300 py-2 rounded-lg shadow-lg hover:bg-yellow-600 transition"
             disabled={loading}
           >
             {loading ? "กำลังโหลด..." : "ลงชื่อเข้าใช้"}

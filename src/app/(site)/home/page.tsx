@@ -1,3 +1,4 @@
+//app/home
 "use client";
 
 import { useEffect, useState } from "react";
@@ -35,6 +36,19 @@ const HomePage = () => {
     setIsCategorySelected,
   } = useCategory();
   const [searchQuery, setSearchQuery] = useState<string>("");
+
+  useEffect(() => {
+    if (session?.accessToken) {
+      localStorage.setItem("accessToken", session.accessToken);
+      console.log(
+        "✅ accessToken ถูกบันทึกลง LocalStorage:",
+        session.accessToken
+      );
+    } else {
+      localStorage.removeItem("accessToken"); // ❌ ลบ accessToken เมื่อไม่มีค่า
+      console.log("🚫 accessToken ถูกลบออกจาก LocalStorage");
+    }
+  }, [session?.accessToken]);
 
   useEffect(() => {
     if (status === "loading") return;

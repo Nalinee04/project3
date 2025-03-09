@@ -1,3 +1,4 @@
+//sale
 import { NextResponse } from "next/server";
 import connection from "@/lib/db";
 import { FieldPacket } from "mysql2";

@@ -1,3 +1,4 @@
+//editshop
 import { NextResponse } from "next/server";
 import connection from "@/lib/db";
 import { FieldPacket, ResultSetHeader } from "mysql2";

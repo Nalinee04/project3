@@ -1,3 +1,4 @@
+//checkshop
 import { NextResponse } from "next/server";
 import connection from "@/lib/db"; // เชื่อมต่อฐานข้อมูล
 

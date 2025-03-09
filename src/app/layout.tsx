@@ -1,3 +1,4 @@
+
 "use client";
 import { Prompt } from "next/font/google";
 import "./globals.css";

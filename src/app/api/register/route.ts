@@ -1,3 +1,4 @@
+//regis
 import { NextResponse } from 'next/server';
 import connection from '@/lib/db'; // ตรวจสอบการเชื่อมต่อฐานข้อมูล
 import { RowDataPacket } from 'mysql2';

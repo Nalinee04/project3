@@ -1,3 +1,5 @@
+//site/detail
+
 "use client";
 
 import { useEffect, useState } from "react";

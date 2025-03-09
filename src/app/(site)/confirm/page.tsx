@@ -1,3 +1,5 @@
+//app/(site)/confirm
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -21,8 +23,11 @@ interface CartItem {
   options?: OptionSelection[]; // ✅ ใช้ options เท่านั้น
 }
 
+// กำหนดประเภท OptionSelection ให้แน่ใจว่า group_id เป็น number
 interface OptionSelection {
-  option_name: string; // ✅ ต้องแน่ใจว่ามี option_name
+  option_name: string;
+  group_id: number;  // กำหนดเป็น number
+  selected_items: string[];
 }
 
 const ConfirmationPage = () => {
@@ -39,16 +44,14 @@ const ConfirmationPage = () => {
   const { cartItems, setCartItems } = useCart(); // ✅ เพิ่ม setCartItems ให้ใช้งานได้
   const shopIdFromCart = cartItems.length > 0 ? cartItems[0].shop_id : null;
 
-   // ดึงค่า note จาก localStorage เมื่อคอมโพเนนต์โหลด
-   useEffect(() => {
+  // ดึงค่า note จาก localStorage เมื่อคอมโพเนนต์โหลด
+  useEffect(() => {
     const savedNote = localStorage.getItem("orderNote");
     if (savedNote) {
       setRestaurantNote(savedNote); // ตั้งค่าที่ดึงมาใน state
       console.log("Note from localStorage:", savedNote); // ลองตรวจสอบค่าที่ดึงมา
     }
   }, []); // ดึงค่าเพียงครั้งเดียวเมื่อคอมโพเนนต์ถูกโหลด
-
-  
 
   const isOrderValid =
     cartItems.length > 0 &&
@@ -65,7 +68,6 @@ const ConfirmationPage = () => {
       cancelButtonText: "ยกเลิก",
       reverseButtons: false,
       width: "300px",
-      
     }).then((result) => {
       if (result.isConfirmed) {
         handleSubmitOrder();
@@ -78,12 +80,36 @@ const ConfirmationPage = () => {
       }
     });
   };
+  interface OptionSelection {
+    option_name: string;
+    group_id: number;
+    selected_items: number[]; // เปลี่ยนเป็น number[]
+  }
+  
+
+// ฟังก์ชันการอัปเดตตัวเลือกในตะกร้า
+const handleOptionChange = (option: OptionSelection, cartId: string) => {
+  // ค้นหาสินค้าในตะกร้าที่ต้องการอัปเดต
+  const updatedCart = cartItems.map((item) => {
+    if (item.cart_id === cartId) {
+      // อัปเดตข้อมูล options
+      item.options = [...(item.options || []), option];
+    }
+    return item;
+  });
+
+  setCartItems(updatedCart);
+
+  // บันทึกข้อมูลที่อัปเดตลงใน localStorage
+  localStorage.setItem("cartItems", JSON.stringify(updatedCart));
+};
+
 
   const savedNote = localStorage.getItem("orderNote");
-if (savedNote) {
-  console.log("Note from localStorage:", savedNote);
-  // ใช้ savedNote ในหน้า QR หรือหน้า confirm
-}
+  if (savedNote) {
+    console.log("Note from localStorage:", savedNote);
+    // ใช้ savedNote ในหน้า QR หรือหน้า confirm
+  }
 
   useEffect(() => {
     if (!shopId && cartItems.length > 0) {
@@ -118,7 +144,6 @@ if (savedNote) {
       Swal.fire("เกิดข้อผิดพลาด", "กรุณาเลือกทุกตัวเลือก", "error");
       return;
     }
-  
 
     // เก็บ restaurantNote ลงใน localStorage
     localStorage.setItem("orderNote", restaurantNote);
@@ -168,7 +193,7 @@ if (savedNote) {
           </svg>
         </button>
       )}
-      <div className="p-4 bg-white rounded-lg shadow-md">
+      <div className="p-4 bg-white rounded-lg shadow-md flex justify-between items-center">
         <h2 className="text-lg font-semibold">สรุปคำสั่งซื้อ</h2>
         <button
           className="border-2 border-black text-black text-sm font-semibold px-4 py-1 rounded-full bg-white"

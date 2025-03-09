@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -159,7 +160,7 @@ const RegisterPage = () => {
               />
             </div>
           </div>
-          <Button type="submit" className="w-full bg-yellow-100 py-2 rounded-lg shadow-lg hover:bg-yellow-600 transition">
+          <Button type="submit" className="w-full bg-yellow-400 py-2 rounded-lg shadow-lg hover:bg-yellow-600 transition">
             สมัครสมาชิก
           </Button>
         </form>

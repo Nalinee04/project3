@@ -1,3 +1,4 @@
+//user
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getUserById } from '@/lib/user'; // ตรวจสอบให้แน่ใจว่าเส้นทางถูกต้อง
 

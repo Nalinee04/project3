@@ -1,3 +1,4 @@
+//auth/next
 import NextAuth, { AuthOptions, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import jwt from "jsonwebtoken";
@@ -126,22 +127,26 @@ export const authOptions: AuthOptions = {
         token.phone = customUser.phone;
         token.image = customUser.image ?? "";
         token.role = customUser.role;
-        token.shop_id = customUser.shop_id ?? null; // ✅ ใช้ null
-
+        token.shop_id = customUser.shop_id ?? null; 
+    
         token.accessToken = jwt.sign(
           {
             id: customUser.id,
             phone: customUser.phone,
             role: customUser.role,
-            shop_id: customUser.shop_id ?? null, // ✅ ใช้ null
+            shop_id: customUser.shop_id ?? null, 
           },
           process.env.JWT_SECRET as string,
           { expiresIn: "4h" }
         );
-        console.log("🔑 JWT Token Generated:", token);
+    
+        console.log("🔑 JWT Token Generated:", token.accessToken); // ✅ เช็คค่าที่สร้าง
       }
+    
+      console.log("🔍 Token in jwt():", token); // ✅ เช็คค่า Token ก่อนส่งออก
+    
       return token;
-    },
+    },    
 
     async session({ session, token }) {
       const customToken = token as CustomToken;
@@ -151,13 +156,16 @@ export const authOptions: AuthOptions = {
         phone: customToken.phone,
         image: customToken.image ?? "",
         role: customToken.role,
-        shop_id: customToken.shop_id ?? null, // ✅ ใช้ null
+        shop_id: customToken.shop_id ?? null, 
       };
-
+    
       session.accessToken = customToken.accessToken ?? "";
-
+    
+      console.log("🛠 Session Created:", session); // ✅ เช็คค่า Session ก่อนส่งกลับ
+    
       return session;
-    },
+    }
+    
   },
 
   pages: {

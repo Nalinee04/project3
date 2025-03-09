@@ -1,3 +1,4 @@
+//menus/[shop_id]/[menu_id]/status
 import { NextResponse } from "next/server";
 import connection from "@/lib/db";
 

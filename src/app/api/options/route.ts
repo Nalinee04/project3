@@ -1,3 +1,4 @@
+//options
 import { NextResponse } from "next/server";
 import connection from "@/lib/db"; // ใช้เชื่อมต่อกับ MySQL
 import { RowDataPacket, OkPacket } from "mysql2";

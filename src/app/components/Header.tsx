@@ -1,3 +1,4 @@
+//header
 "use client";
 
 import { usePathname } from "next/navigation";
@@ -9,7 +10,7 @@ const Header = () => {
   const pathname = usePathname();
 
  // 🔹 รายชื่อหน้าที่ไม่ต้องแสดง Header
- const hiddenHeaderRoutes = ["/cart-empty", "/login", "/restaurant/dashboard","/restaurant/menu","/restaurant/addmenu"];
+ const hiddenHeaderRoutes = ["/cart-empty", "/login", "/restaurant/dashboard","/restaurant/menu","/restaurant/addmenu","/roleres","/help","/helpres","/restaurant/editshop"];
 
  // ✅ ซ่อน Header ถ้า pathname อยู่ใน hiddenHeaderRoutes หรือเป็น "/restaurant/details"
  if (hiddenHeaderRoutes.includes(pathname) || pathname.startsWith("/restaurant/details")) {

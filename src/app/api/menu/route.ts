@@ -1,3 +1,4 @@
+//menu
 import { NextResponse } from "next/server";
 import connection from "@/lib/db";
 import { RowDataPacket } from "mysql2";
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // 1️⃣ แปลงราคาให้เป็น string เพื่อหลีกเลี่ยงปัญหาการลบ 0
+    //1️⃣ แปลงราคาให้เป็น string เพื่อหลีกเลี่ยงปัญหาการลบ 0
     const priceStr = String(price);
 
     // 2️⃣ เพิ่มเมนูใหม่ลงในฐานข้อมูล

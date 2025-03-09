@@ -1,3 +1,4 @@
+//cart
 import { ShoppingCart } from "lucide-react";
 import { useCart } from "./CartContext"; // ใช้งาน useCart
 import { useRouter } from "next/navigation"; // ใช้ useRouter เพื่อ redirect

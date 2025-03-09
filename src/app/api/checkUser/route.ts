@@ -1,3 +1,4 @@
+//checkuser
 import { NextResponse } from "next/server";
 import connection from "@/lib/db";
 import { RowDataPacket } from "mysql2";

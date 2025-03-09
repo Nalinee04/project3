@@ -1,3 +1,4 @@
+//app/menus/[shop_id]
 "use client";
 
 import { useEffect, useState, useRef } from "react";

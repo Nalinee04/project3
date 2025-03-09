@@ -1,7 +1,7 @@
+//order_item
 import { NextResponse } from "next/server";
 import connection from "@/lib/db";
 import { FieldPacket } from "mysql2";
-import { authenticateToken } from "@/lib/middleware";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -13,16 +13,10 @@ export async function GET(req: Request) {
 
   console.log("🔍 Fetching order_items for order_id:", orderId);
 
-  // ลบการตรวจสอบสิทธิ์ออก
-  // const user = authenticateToken(req);
-  // if (!user) {
-  //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  // }
-
   try {
     if (!connection) throw new Error("Database connection is not established.");
 
-    // 📌 ดึงข้อมูลคำสั่งซื้อ (status) และรายการ order_items
+    // 📌 ดึงข้อมูลสถานะของคำสั่งซื้อ
     const [orders]: [any[], FieldPacket[]] = await connection.query(
       "SELECT status FROM orders WHERE order_id = ?",
       [orderId]
@@ -32,10 +26,16 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
+    // 📌 ดึงข้อมูล order_items
     const [orderItems]: [any[], FieldPacket[]] = await connection.query(
-      "SELECT * FROM order_items WHERE order_id = ?",
+      "SELECT item_id, menu_name, price, quantity, menu_image FROM order_items WHERE order_id = ?",
       [orderId]
     );
+
+    console.log("✅ Items fetched:", orderItems);
+
+    // 📌 ตรวจสอบให้แน่ใจว่า `orderItems` เป็นอาร์เรย์
+    const formattedItems = Array.isArray(orderItems) ? orderItems : [];
 
     // 📌 แปลงสถานะจาก "รอการยืนยัน" → "รอดำเนินการ" ถ้าจำเป็น
     let orderStatus = orders[0].status;
@@ -44,11 +44,11 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json(
-      { order_status: orderStatus, items: orderItems },
+      { order_status: orderStatus, items: formattedItems },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error fetching order items:", error);
+    console.error("❌ Error fetching order items:", error);
     return NextResponse.json(
       { error: "Error fetching order items" },
       { status: 500 }

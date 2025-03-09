@@ -1,3 +1,4 @@
+//res/menu/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -61,7 +62,7 @@ const MenuManagement = () => {
         <button onClick={() => router.back()} className="text-white">
           <FiArrowLeft size={24} />
         </button>
-        <h1 className="text-xl font-bold flex-1 text-center">รายละเอียดคำสั่งซื้อ</h1>
+        <h1 className="text-xl font-bold flex-1 text-center">เมนูทั้งหมด</h1>
       </div>
 
       {/* Main Content */}
