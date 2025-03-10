@@ -6,7 +6,11 @@ import connection from "@/lib/db";
 import { JWT } from "next-auth/jwt";
 import { Session } from "next-auth";
 
-const SECRET_KEY = process.env.JWT_SECRET || "mysecret";
+// ✅ ตรวจสอบว่า JWT_SECRET ถูกตั้งค่าใน .env
+if (!process.env.JWT_SECRET) {
+  throw new Error("Missing JWT_SECRET in environment variables");
+}
+const SECRET_KEY = process.env.JWT_SECRET;
 
 interface CustomUser extends User {
   id: number;
@@ -40,7 +44,7 @@ interface CustomSession extends Session {
   accessToken: string;
 }
 
-export const authOptions: AuthOptions = {
+const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -49,43 +53,50 @@ export const authOptions: AuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials): Promise<CustomUser | null> {
-        if (!credentials?.phone || !credentials?.password) {
-          console.log("⚠️ Missing phone or password");
+        try {
+          if (!credentials?.phone || !credentials?.password) {
+            console.log("⚠️ Missing phone or password");
+            return null;
+          }
+
+          const query = `
+            SELECT user_id AS id, name, phone, image, password, 'user' AS role, NULL AS shop_id FROM users WHERE phone = ? 
+            UNION
+            SELECT shop_id AS id, shop_name AS name, phone_number AS phone, shop_image AS image, password, 'shop' AS role, shop_id FROM shops WHERE phone_number = ? 
+            LIMIT 1;
+          `;
+          const values = [credentials.phone, credentials.phone];
+          const [results]: any = await connection.execute(query, values);
+
+          if (results.length === 0) {
+            console.log("⚠️ ไม่พบผู้ใช้");
+            return null;
+          }
+
+          const user = results[0];
+
+          // 🔹 ตรวจสอบรหัสผ่านด้วย bcrypt
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+          if (!isPasswordValid) {
+            console.log("⚠️ รหัสผ่านไม่ถูกต้อง");
+            return null;
+          }
+
+          delete user.password; // ✅ ลบ password ออกจาก object ก่อน return
+
+          return {
+            id: Number(user.id),
+            name: String(user.name),
+            phone: String(user.phone),
+            image: user.image ?? "",
+            role: user.role,
+            shop_id: user.shop_id ? Number(user.shop_id) : null,
+            isRegistered: true,
+          };
+        } catch (error) {
+          console.error("❌ Database Error:", error);
           return null;
         }
-
-        const query = `
-          SELECT user_id AS id, name, phone, image, password, 'user' AS role, NULL AS shop_id FROM users WHERE phone = ? 
-          UNION
-          SELECT shop_id AS id, shop_name AS name, phone_number AS phone, shop_image AS image, password, 'shop' AS role, shop_id FROM shops WHERE phone_number = ? 
-          LIMIT 1;
-        `;
-        const values = [credentials.phone, credentials.phone];
-        const [results]: any = await connection.query(query, values);
-
-        if (results.length === 0) {
-          console.log("⚠️ ไม่พบผู้ใช้");
-          return null;
-        }
-
-        const user = results[0];
-
-        // 🔹 ตรวจสอบรหัสผ่านด้วย bcrypt
-        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isPasswordValid) {
-          console.log("⚠️ รหัสผ่านไม่ถูกต้อง");
-          return null;
-        }
-
-        return {
-          id: Number(user.id),
-          name: String(user.name),
-          phone: String(user.phone),
-          image: user.image ?? "",
-          role: user.role,
-          shop_id: user.shop_id ? Number(user.shop_id) : null,
-          isRegistered: true,
-        };
       },
     }),
   ],
@@ -125,7 +136,7 @@ export const authOptions: AuthOptions = {
           { expiresIn: "4h" }
         );
 
-        console.log("✅ JWT Token Generated:", token.accessToken);
+        console.log("✅ JWT Token Generated Successfully");
       }
 
       return token;
@@ -144,7 +155,11 @@ export const authOptions: AuthOptions = {
 
       session.accessToken = customToken.accessToken;
 
-      console.log("✅ Session Created:", session);
+      console.log("✅ Session Created:", {
+        user: session.user,
+        accessToken: "[HIDDEN]",
+      });
+
       return session;
     },
   },
@@ -154,3 +169,5 @@ export const authOptions: AuthOptions = {
   },
   secret: SECRET_KEY,
 };
+
+export default authOptions;
