@@ -157,7 +157,7 @@ const MenuDetailPage = () => {
     if (!menu || isAdding || isLoading) return;
     setIsAdding(true);
     setIsLoading(true);
-  
+
     const cartItem = {
       cart_id: Date.now().toString(),
       item_id: menu.menu_id.toString(), // เปลี่ยนจาก id เป็น item_id
@@ -172,19 +172,19 @@ const MenuDetailPage = () => {
       })),
       note,
     };
-  
+
     // เก็บค่า note ลงใน localStorage สำหรับเมนูนั้นและร้านนั้น
-  localStorage.setItem(`orderNote_${menu.shop_id}_${menu.menu_id}`, note);
-  
+    localStorage.setItem(`orderNote_${menu.shop_id}_${menu.menu_id}`, note);
+
     // เพิ่มสินค้าไปที่ตะกร้า
     addToCart(cartItem); // ✅ ใช้งานได้ถูกต้อง
-  
+
     setTimeout(() => {
       setIsAdding(false);
       setIsLoading(false);
     }, 1000);
   };
-  
+
   if (!menu) {
     return null;
   }
@@ -284,24 +284,28 @@ const MenuDetailPage = () => {
           />
         </div>
 
-        <div className="fixed bottom-0 left-0 w-full bg-white p-4 shadow-lg flex flex-col items-center">
+        {/* ส่วนที่ต้องการเพิ่มเส้นคั่น */}
+        <div className="fixed bottom-0 left-0 w-full bg-white p-4 shadow-lg flex flex-col items-center border-t border-gray-300">
           {/* ปุ่มเพิ่ม/ลดจำนวน */}
           <div className="flex items-center space-x-4 mb-2">
-            <Button
-              onClick={handleDecrease}
-              className="bg-white text-yellow-500 text-2xl font-bold px-4 py-2 rounded-lg"
-            >
-              {" "}
-              -{" "}
-            </Button>
-            <span className="text-lg font-semibold">{quantity}</span>
-            <Button
-              onClick={handleIncrease}
-              className="bg-white text-yellow-500 text-2xl font-bold px-4 py-2 rounded-lg"
-            >
-              {" "}
-              +{" "}
-            </Button>
+          <Button
+  onClick={handleDecrease}
+  className="bg-white text-black text-2xl font-bold px-4 py-2 rounded-lg 
+             active:bg-yellow-600 focus:bg-yellow-500 focus:outline-none transition-colors"
+>
+  -
+</Button>
+
+<span className="text-lg font-semibold">{quantity}</span>
+
+<Button
+  onClick={handleIncrease}
+  className="bg-white text-black text-2xl font-bold px-4 py-2 rounded-lg 
+             active:bg-yellow-600 focus:bg-yellow-500 focus:outline-none transition-colors"
+>
+  +
+</Button>
+
           </div>
 
           {/* ปุ่มเพิ่มไปยังตะกร้า */}

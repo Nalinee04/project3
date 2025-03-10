@@ -1,4 +1,3 @@
-//order_item
 import { NextResponse } from "next/server";
 import connection from "@/lib/db";
 import { FieldPacket } from "mysql2";
@@ -26,9 +25,9 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    // 📌 ดึงข้อมูล order_items
+    // 📌 ดึงข้อมูล order_items พร้อม note
     const [orderItems]: [any[], FieldPacket[]] = await connection.query(
-      "SELECT item_id, menu_name, price, quantity, menu_image FROM order_items WHERE order_id = ?",
+      "SELECT item_id, menu_name, price, quantity, menu_image, note FROM order_items WHERE order_id = ?",
       [orderId]
     );
 

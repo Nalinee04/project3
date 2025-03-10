@@ -1,13 +1,11 @@
-//app/home
 "use client";
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { Utensils } from "lucide-react";
+import { Utensils, Search } from "lucide-react";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useCategory } from "@/app/context/CategoryContext";
 
 interface Category {
@@ -22,6 +20,7 @@ interface Shop {
   shop_image: string;
   cate_id: number;
   phone_number: string;
+  status: string;
 }
 
 const HomePage = () => {
@@ -40,12 +39,9 @@ const HomePage = () => {
   useEffect(() => {
     if (session?.accessToken) {
       localStorage.setItem("accessToken", session.accessToken);
-      console.log(
-        "✅ accessToken ถูกบันทึกลง LocalStorage:",
-        session.accessToken
-      );
+      console.log("✅ accessToken ถูกบันทึกลง LocalStorage:", session.accessToken);
     } else {
-      localStorage.removeItem("accessToken"); // ❌ ลบ accessToken เมื่อไม่มีค่า
+      localStorage.removeItem("accessToken");
       console.log("🚫 accessToken ถูกลบออกจาก LocalStorage");
     }
   }, [session?.accessToken]);
@@ -83,17 +79,18 @@ const HomePage = () => {
       }
     };
 
-    fetchData();
-  }, [status, router]); // ✅ โหลดข้อมูลเมื่อ `status` เปลี่ยน
+    fetchData(); // โหลดครั้งแรก
 
-  // ✅ เช็คก่อน `filter()`
-  const filteredShops = Array.isArray(shops)
-    ? shops.filter(
-        (shop) =>
-          shop.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-          (!selectedCategory || shop.cate_id === selectedCategory)
-      )
-    : [];
+    const interval = setInterval(fetchData, 2000); // รีเฟรชข้อมูลร้านทุก 5 วินาที
+
+    return () => clearInterval(interval); // ล้าง interval เมื่อออกจากหน้า
+  }, [status, router]);
+
+  const filteredShops = shops.filter(
+    (shop) =>
+      shop.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      (!selectedCategory || shop.cate_id === selectedCategory)
+  );
 
   const handleCategoryClick = (categoryId: number) => {
     setSelectedCategory(categoryId);
@@ -102,7 +99,6 @@ const HomePage = () => {
 
   return (
     <div className="p-6">
-      {/* ช่องค้นหา */}
       <div className="relative mb-6">
         <input
           type="text"
@@ -111,13 +107,9 @@ const HomePage = () => {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <Search
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-          size={20}
-        />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
       </div>
 
-      {/* ประเภทอาหาร */}
       {searchQuery === "" && (
         <div className="relative w-full overflow-hidden">
           <div className="flex overflow-x-scroll scrollbar-hide snap-x snap-mandatory space-x-4 px-4">
@@ -129,11 +121,7 @@ const HomePage = () => {
               >
                 <div
                   className={`relative w-14 h-14 mb-2 rounded-full overflow-hidden ring-2 transition-all duration-200 ease-in-out
-              ${
-                selectedCategory === category.cate_id
-                  ? "ring-green-500"
-                  : "ring-transparent"
-              }`}
+                  ${selectedCategory === category.cate_id ? "ring-green-500" : "ring-transparent"}`}
                 >
                   <Image
                     src={category.cate_images || "/images/photo.png"}
@@ -142,23 +130,19 @@ const HomePage = () => {
                     objectFit="cover"
                     objectPosition="center"
                   />
-                  {/* ✅ ไอคอนถูกตรงกลางล่าง */}
                   {selectedCategory === category.cate_id && (
                     <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 bg-white/80 text-green-600 text-xs px-1 rounded-t-lg">
                       ✔
                     </div>
                   )}
                 </div>
-                <p className="text-sm text-center w-20 truncate">
-                  {category.cate_name}
-                </p>
+                <p className="text-sm text-center w-20 truncate">{category.cate_name}</p>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* ปุ่มย้อนกลับ */}
       {isCategorySelected && (
         <button
           className="fixed top-3 left-3 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition"
@@ -167,26 +151,14 @@ const HomePage = () => {
             setIsCategorySelected(false);
           }}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-            className="w-6 h-6 text-gray-700"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15 19l-7-7 7-7"
-            />
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-gray-700">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
       )}
-      {/* เส้นคั่นหลังประเภทอาหาร */}
+
       <hr className="my-4 border-t border-gray-300" />
 
-      {/* ร้านอาหารทั้งหมด พร้อมไอคอนที่ดูดีขึ้น */}
       <div className="flex items-center gap-2 mb-4 mt-6">
         <Utensils size={28} className="text-gray-800" />
         <h3 className="text-xl font-bold text-gray-800">ร้านอาหารทั้งหมด</h3>
@@ -196,9 +168,16 @@ const HomePage = () => {
         filteredShops.map((shop) => (
           <Card
             key={shop.shop_id}
-            className="cursor-pointer flex items-center p-4 mb-4 rounded-lg shadow-sm hover:shadow-md transition"
-            onClick={() => router.push(`/menus/${shop.shop_id}`)}
+            className={`relative flex items-center p-4 mb-4 rounded-lg shadow-sm transition 
+              ${shop.status === "closed" ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:shadow-md"}`}
+            onClick={() => shop.status !== "closed" && router.push(`/menus/${shop.shop_id}`)}
           >
+            {shop.status === "closed" && (
+              <div className="absolute inset-0 bg-gray-300 opacity-50 flex items-center justify-center rounded-lg">
+                <p className="text-lg font-semibold text-gray-700">🚫 ร้านปิด</p>
+              </div>
+            )}
+
             <Image
               src={shop.shop_image || "/images/photo.png"}
               alt={shop.shop_name}
@@ -209,16 +188,13 @@ const HomePage = () => {
             <CardContent>
               <CardTitle>{shop.shop_name}</CardTitle>
               <p className="text-sm font-normal text-gray-600 mt-2">
-                {categories.find((c) => c.cate_id === shop.cate_id)
-                  ?.cate_name || "ไม่ระบุประเภท"}
+                {categories.find((c) => c.cate_id === shop.cate_id)?.cate_name || "ไม่ระบุประเภท"}
               </p>
             </CardContent>
           </Card>
         ))
       ) : (
-        <p className="text-center text-gray-500">
-          ไม่พบร้านอาหารที่ตรงกับคำค้นหา
-        </p>
+        <p className="text-center text-gray-500">ไม่พบร้านอาหารที่ตรงกับคำค้นหา</p>
       )}
     </div>
   );

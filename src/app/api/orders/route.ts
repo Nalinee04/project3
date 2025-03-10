@@ -1,4 +1,3 @@
-//orders
 import { NextResponse, NextRequest } from "next/server";
 import connection from "@/lib/db";
 import { FieldPacket, ResultSetHeader } from "mysql2";
@@ -20,7 +19,8 @@ export async function GET(req: NextRequest) {
               'menu_name', oi.menu_name, 
               'price', oi.price, 
               'quantity', oi.quantity, 
-              'menu_image', oi.menu_image
+              'menu_image', oi.menu_image,
+              'note', oi.note  -- ✅ เพิ่ม note ตรงนี้
             )
           ), ']'), '[]'
         ) AS items 
@@ -54,6 +54,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  function generateOrderNumber() {
+    const randomDigits = Math.floor(1000 + Math.random() * 9000); // สุ่มเลข 4 หลัก
+    return `TSK-${randomDigits}`;
+  }
+
   try {
     const body = await req.json().catch(() => null);
     if (!body) {
@@ -66,7 +71,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const order_number = Date.now().toString();
+    const order_number = generateOrderNumber(); // ใช้ฟังก์ชันสร้างเลขออเดอร์
     const totalAmount = items.reduce((total: number, item: { price: number; quantity: number }) =>
       total + item.price * item.quantity, 0);
 
@@ -79,8 +84,8 @@ export async function POST(req: NextRequest) {
 
     const orderItemsQueries = items.map((item) =>
       connection.query(
-        "INSERT INTO order_items (order_id, menu_name, price, quantity, menu_image) VALUES (?, ?, ?, ?, ?)",
-        [orderId, item.menu_name, item.price, item.quantity, item.menu_image]
+        "INSERT INTO order_items (order_id, menu_name, price, quantity, menu_image, note) VALUES (?, ?, ?, ?, ?, ?)", // ✅ เพิ่ม note
+        [orderId, item.menu_name, item.price, item.quantity, item.menu_image, item.note || ""]
       )
     );
 
