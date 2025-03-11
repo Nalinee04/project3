@@ -24,7 +24,7 @@ const MenuPage = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [shopName, setShopName] = useState<string>("ร้านอาหาร");
   const [shopImage, setShopImage] = useState<string>("/images/photo.png");
-  
+
   const { getTotalQuantity } = useCart();
 
   const [shopStatus, setShopStatus] = useState<string>("closed");
@@ -35,7 +35,7 @@ const MenuPage = () => {
   useEffect(() => {
     const prevPage = sessionStorage.getItem("prevPage");
     if (prevPage !== "detail") {
-      prevPageRef.current = "menu"; 
+      prevPageRef.current = "menu";
     }
     sessionStorage.setItem("prevPage", "menu"); // บันทึกหน้าปัจจุบันเป็น menu
   }, []);
@@ -83,9 +83,13 @@ const MenuPage = () => {
             const prevPage = sessionStorage.getItem("prevPage");
 
             if (prevPage === "detail") {
-              sessionStorage.setItem("prevPage", "menu"); 
-              router.push("/"); // กลับไปหน้า Home
+              sessionStorage.setItem("prevPage", "menu");
+              router.replace("/menus"); // กลับไปหน้าเมนู
+            } else if (prevPage === "menu") {
+              sessionStorage.removeItem("prevPage");
+              router.replace("/home"); // กลับไปหน้า Home ทันที
             } else {
+              sessionStorage.removeItem("prevPage");
               router.back();
             }
           }}
@@ -111,45 +115,43 @@ const MenuPage = () => {
       </div>
 
       {/* รายการเมนู */}
-<div className="p-4">
-  {menuItems.length > 0 ? (
-    <div className="grid grid-cols-1 gap-4">
-      {menuItems.map((menu) => (
-        <Card
-          key={`${menu.menu_id}-${menu.item_name}`} // ใช้ menu_id + item_name เพื่อให้ key ไม่ซ้ำกัน
-          className="flex items-center p-2 cursor-pointer hover:bg-gray-100 transition"
-          onClick={() => {
-            sessionStorage.setItem("prevPage", "detail"); // ✅ บันทึกหน้าก่อนหน้าเป็น detail
-            router.push(`/detail?menu_id=${menu.menu_id}`);
-          }}
-        >
-          <Image
-            src={
-              menu.menu_image && menu.menu_image !== "NULL"
-                ? menu.menu_image
-                : "/images/photo.png"
-            }
-            alt={menu.menu_name}
-            width={80}
-            height={80}
-            className="rounded-lg object-cover w-20 h-20"
-          />
+      <div className="p-4">
+        {menuItems.length > 0 ? (
+          <div className="grid grid-cols-1 gap-4">
+            {menuItems.map((menu) => (
+              <Card
+                key={`${menu.menu_id}-${menu.item_name}`} // ใช้ menu_id + item_name เพื่อให้ key ไม่ซ้ำกัน
+                className="flex items-center p-2 cursor-pointer hover:bg-gray-100 transition"
+                onClick={() => {
+                  sessionStorage.setItem("prevPage", "detail"); // ✅ บันทึกหน้าก่อนหน้าเป็น detail
+                  router.push(`/detail?menu_id=${menu.menu_id}`);
+                }}
+              >
+                <Image
+                  src={
+                    menu.menu_image && menu.menu_image !== "NULL"
+                      ? menu.menu_image
+                      : "/images/photo.png"
+                  }
+                  alt={menu.menu_name}
+                  width={80}
+                  height={80}
+                  className="rounded-lg object-cover w-20 h-20"
+                />
 
-          <CardContent className="ml-4">
-            <h3 className="text-lg text-gray-600 font-normal">
-              {menu.menu_name}
-            </h3>
-            <p className="text-gray-700 font-semibold">{menu.price}</p>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  ) : (
-    <p className="text-center text-gray-500">ไม่พบเมนูสำหรับร้านนี้</p>
-  )}
-</div>
-
-    
+                <CardContent className="ml-4">
+                  <h3 className="text-lg text-gray-600 font-normal">
+                    {menu.menu_name}
+                  </h3>
+                  <p className="text-gray-700 font-semibold">{menu.price}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-gray-500">ไม่พบเมนูสำหรับร้านนี้</p>
+        )}
+      </div>
     </div>
   );
 };

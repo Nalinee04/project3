@@ -1,17 +1,12 @@
 import jwt from "jsonwebtoken";
-import { NextRequest } from "next/server";
 
 const SECRET_KEY = process.env.NEXTAUTH_SECRET || "default_secret";
 
-export async function getUserFromToken(req: NextRequest) {
+export function getUserFromToken(token?: string) {
+  if (!token) return null; // ✅ ถ้าไม่มี token ให้ return null
+
   try {
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
-
-    const token = authHeader.split(" ")[1];
-
     console.log("🛠️ Raw Token:", token);
-
     const decoded = jwt.verify(token, SECRET_KEY) as any;
 
     console.log("🔓 Decoded Token:", decoded);

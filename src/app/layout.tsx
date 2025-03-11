@@ -13,6 +13,8 @@ import "react-toastify/dist/ReactToastify.css";
 import BottomNav from "./components/BottomNav";
 import { CategoryProvider } from "./context/CategoryContext"; // ✅ Import Context
 
+
+
 const prompt = Prompt({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],

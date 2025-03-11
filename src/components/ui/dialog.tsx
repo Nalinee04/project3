@@ -66,25 +66,13 @@ const DialogFooter = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      "flex justify-between sm:space-x-2 w-full", // ใช้ w-full เพื่อให้แยกกันได้
-      className
-    )}
-    {...props}
-  >
-    <div className="flex justify-start w-full">
-      <DialogClose className="flex items-center text-gray-500 space-x-2">
-        <span>ยกเลิก</span>
-      </DialogClose>
-    </div>
-    <div className="flex justify-end w-full">
-      <DialogClose className="flex items-center text-red-500 space-x-2">
-        <span>ออกจากระบบ</span>
-      </DialogClose>
-    </div>
+  <div className={cn("flex justify-center w-full", className)} {...props}>
+    <DialogClose className="w-2/3 bg-yellow-500 hover:bg-yellow-600 text-white py-3 rounded-lg font-semibold text-center">
+      ยืนยัน
+    </DialogClose>
   </div>
 )
+
 
 
 const DialogTitle = React.forwardRef<

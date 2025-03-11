@@ -4,12 +4,12 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-// สร้างชนิดข้อมูลสำหรับผู้ใช้
 interface User {
   id: string;
   username: string;
   email: string;
-  image: string; // เพิ่ม field image ที่นี่
+  phone: string;  // ✅ เพิ่มฟิลด์เบอร์โทร
+  image: string;
 }
 
 // สร้างชนิดข้อมูลสำหรับ UserContext
@@ -55,10 +55,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const login = (userData: User, userToken: string) => {
     setUser(userData);
     setToken(userToken);
-    localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("user", JSON.stringify(userData)); // ✅ บันทึกเบอร์โทรด้วย
     localStorage.setItem("token", userToken);
   };
-
+  
   // ฟังก์ชันสำหรับการออกจากระบบ
   const logout = () => {
     setUser(null);

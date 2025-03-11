@@ -53,6 +53,11 @@ const LoginPage = () => {
       localStorage.setItem("token", session.accessToken);
       console.log("✅ Token ถูกบันทึกลง localStorage:", session.accessToken);
   
+      // ✅ บันทึกข้อมูล user ลง localStorage
+      localStorage.setItem("userName", session.user.name || "ไม่ระบุชื่อ");
+      localStorage.setItem("phoneNumber", phone);
+      console.log("✅ บันทึกชื่อผู้ใช้และเบอร์โทร:", session.user.name, phone);
+  
       // ตรวจสอบว่าเป็นร้านหรือไม่
       const checkShop = async (phoneNumber: string) => {
         const response = await fetch(`/api/checkShop?phone=${phoneNumber}`);
@@ -69,19 +74,16 @@ const LoginPage = () => {
         console.log("🔑 การลงทะเบียน: ", data.exists);
       };
   
-      // ตรวจสอบเมื่อกรอกเบอร์โทรศัพท์
       if (phone) {
         await checkShop(phone);
         await checkRegistration(phone);
       }
   
-      // แสดงไอคอนหมุนก่อน 2 วินาที
       setTimeout(() => {
-        setProgressVisible(true); // แสดง Progress Bar
+        setProgressVisible(true);
         console.log("🔑 แสดง Progress Bar");
       }, 2000);
   
-      // ไปยังหน้าโฮมหลังจาก 2 วินาที
       setTimeout(() => {
         if (session.user.role === "shop") {
           console.log("🔑 ไปยังหน้า Dashboard ของร้าน");
@@ -98,6 +100,7 @@ const LoginPage = () => {
       setLoading(false);
     }
   };
+  
   
 
   return (

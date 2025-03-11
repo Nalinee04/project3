@@ -7,6 +7,8 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCategory } from "@/app/context/CategoryContext";
+// import OrderTrackerBox from "@/components/ui/OrderTrackerBox";
+
 
 interface Category {
   cate_id: number;
@@ -156,7 +158,8 @@ const HomePage = () => {
           </svg>
         </button>
       )}
-
+{/* แสดง Order Tracker ถ้ามีออเดอร์ล่าสุด
+<OrderTrackerBox /> */}
       <hr className="my-4 border-t border-gray-300" />
 
       <div className="flex items-center gap-2 mb-4 mt-6">

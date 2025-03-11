@@ -6,6 +6,13 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "../../components/CartContext";
 import { ArrowLeft } from "lucide-react";
@@ -16,6 +23,7 @@ interface Menu {
   menu_name: string;
   price: string;
   menu_image: string;
+  shop_name: string;
 }
 
 interface OptionGroup {
@@ -46,6 +54,7 @@ const MenuDetailPage = () => {
   const [quantity, setQuantity] = useState<number>(1);
   const [note, setNote] = useState<string>("");
   const [isAdding, setIsAdding] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [basePrice, setBasePrice] = useState<number>(0); // ราคาตั้งต้นของเมนู
   const [totalPrice, setTotalPrice] = useState<number>(0); // ราคาหลังรวม option
@@ -57,22 +66,28 @@ const MenuDetailPage = () => {
     const storedItem = localStorage.getItem("editItem");
     if (storedItem) {
       const editItem = JSON.parse(storedItem);
-      if (editItem.item_id === menu_id) {
-        setQuantity(editItem.quantity); // ตั้งค่าจำนวนที่เคยเลือกไว้
-        setNote(editItem.note || ""); // ตั้งค่าหมายเหตุที่เคยเขียนไว้
+      console.log("📌 editItem จาก localStorage:", editItem); // ตรวจสอบค่าที่โหลด
+
+      if (editItem.item_id.toString() === menu_id.toString()) {
+        setQuantity(editItem.quantity); 
+        setNote(editItem.note || ""); 
 
         // ตั้งค่าตัวเลือกที่เคยเลือกไว้
         const restoredOptions: Record<number, number[]> = {};
-        editItem.options.forEach(
+        editItem.options?.forEach(
           (group: { group_id: number; selected_items: number[] }) => {
             restoredOptions[group.group_id] = group.selected_items;
           }
         );
 
+        console.log("✅ ตัวเลือกที่โหลดจาก localStorage:", restoredOptions);
+
         setSelectedOptions(restoredOptions);
 
-        // ลบค่าชั่วคราวออกจาก localStorage หลังจากโหลดเสร็จ
-        localStorage.removeItem("editItem");
+        // ❌ ปิดการลบ localStorage ชั่วคราวก่อน
+        // setTimeout(() => {
+        //   localStorage.removeItem("editItem");
+        // }, 500);
       }
     }
 
@@ -80,12 +95,13 @@ const MenuDetailPage = () => {
       try {
         const res = await fetch(`/api/menue/detail?menu_id=${menu_id}`);
         const data = await res.json();
-        setOptions(data.options);
+        console.log("📌 เมนูที่โหลดจาก API:", data);
 
         if (res.ok) {
           setMenu(data.menu);
           setOptions(data.options);
           setBasePrice(parseFloat(data.menu.price || "0"));
+          console.log("✅ ค่าของ menu:", data.menu); // 🔥 เช็กว่ามี restaurant_name หรือไม่
         } else {
           console.error("❌ API Error:", data.error);
         }
@@ -96,6 +112,7 @@ const MenuDetailPage = () => {
 
     fetchMenu();
   }, [menu_id]);
+
 
   useEffect(() => {
     let optionPrice = Object.keys(selectedOptions).reduce((sum, groupId) => {
@@ -160,21 +177,21 @@ const MenuDetailPage = () => {
 
     const cartItem = {
       cart_id: Date.now().toString(),
-      item_id: menu.menu_id.toString(), // เปลี่ยนจาก id เป็น item_id
-      menu_name: menu.menu_name, // เปลี่ยนจาก name เป็น menu_name
+      item_id: menu.menu_id.toString(),
+      menu_name: menu.menu_name,
       price: totalPrice,
-      menu_image: menu.menu_image, // เปลี่ยนจาก image เป็น menu_image
+      menu_image: menu.menu_image,
       quantity,
       shop_id: menu.shop_id.toString(),
+      shop_name: menu.shop_name, // ✅ เพิ่มตรงนี้
       options: Object.keys(selectedOptions || {}).map((groupId) => ({
         group_id: parseInt(groupId),
         selected_items: selectedOptions[parseInt(groupId)] ?? [],
       })),
       note,
     };
+    
 
-    // เก็บค่า note ลงใน localStorage สำหรับเมนูนั้นและร้านนั้น
-    localStorage.setItem(`orderNote_${menu.shop_id}_${menu.menu_id}`, note);
 
     // เพิ่มสินค้าไปที่ตะกร้า
     addToCart(cartItem); // ✅ ใช้งานได้ถูกต้อง
@@ -202,10 +219,12 @@ const MenuDetailPage = () => {
                hover:bg-black/70 transition-all z-50"
         onClick={() => {
           const prevPage = sessionStorage.getItem("prevPage");
+
           if (prevPage === "detail") {
             sessionStorage.setItem("prevPage", "menu");
-            router.push(`/menus/${menu.shop_id}`);
+            router.replace(`/menus/${menu.shop_id}`); // 🔥 ใช้ replace() แทน push()
           } else {
+            sessionStorage.removeItem("prevPage"); // 🧹 ล้างค่าที่อาจทำให้ย้อนผิดพลาด
             router.back();
           }
         }}
@@ -278,34 +297,65 @@ const MenuDetailPage = () => {
           <h3 className="text-lg font-semibold">หมายเหตุถึงร้านอาหาร</h3>
           <Textarea
             placeholder="ระบุรายละเอียดคำขอ (ถ้ามี)"
+            onClick={() => setIsModalOpen(true)}
             className="mt-2 w-full p-2 border rounded-lg"
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />
         </div>
 
+        {/* Modal สำหรับกรอกหมายเหตุ */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+  <DialogContent className="p-6 rounded-xl bg-white">
+    <DialogHeader className="border-b pb-2">
+      <DialogTitle className="text-lg font-semibold text-center">
+        หมายเหตุถึงร้านอาหาร
+      </DialogTitle>
+    </DialogHeader>
+    
+    <div className="mt-4">
+      <p className="text-sm text-gray-500">ไม่จำเป็นต้องระบุ</p>
+      <Textarea
+        placeholder="ระบุรายละเอียดคำขอ (ขึ้นอยู่กับดุลยพินิจของร้าน)"
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        className="mt-2 w-full p-3 border rounded-lg"
+      />
+    </div>
+
+    <DialogFooter className="mt-4 flex justify-center">
+      <Button
+        onClick={() => setIsModalOpen(false)}
+        className="w-2/3 bg-yellow-500 hover:bg-yellow-600 text-white py-3 rounded-lg font-semibold"
+      >
+        ยืนยัน
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
+
         {/* ส่วนที่ต้องการเพิ่มเส้นคั่น */}
         <div className="fixed bottom-0 left-0 w-full bg-white p-4 shadow-lg flex flex-col items-center border-t border-gray-300">
           {/* ปุ่มเพิ่ม/ลดจำนวน */}
           <div className="flex items-center space-x-4 mb-2">
-          <Button
-  onClick={handleDecrease}
-  className="bg-white text-black text-2xl font-bold px-4 py-2 rounded-lg 
+            <Button
+              onClick={handleDecrease}
+              className="bg-white text-black text-2xl font-bold px-4 py-2 rounded-lg 
              active:bg-yellow-600 focus:bg-yellow-500 focus:outline-none transition-colors"
->
-  -
-</Button>
+            >
+              -
+            </Button>
 
-<span className="text-lg font-semibold">{quantity}</span>
+            <span className="text-lg font-semibold">{quantity}</span>
 
-<Button
-  onClick={handleIncrease}
-  className="bg-white text-black text-2xl font-bold px-4 py-2 rounded-lg 
+            <Button
+              onClick={handleIncrease}
+              className="bg-white text-black text-2xl font-bold px-4 py-2 rounded-lg 
              active:bg-yellow-600 focus:bg-yellow-500 focus:outline-none transition-colors"
->
-  +
-</Button>
-
+            >
+              +
+            </Button>
           </div>
 
           {/* ปุ่มเพิ่มไปยังตะกร้า */}

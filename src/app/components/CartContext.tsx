@@ -1,4 +1,3 @@
-//cartcontext
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
@@ -14,14 +13,14 @@ interface CartItem {
   item_id: string;
   menu_name: string;
   price: number;
+  shop_name: string;
   quantity: number;
   shop_id: string;
   menu_image: string;
   item_name?: string;
   note?: string;
-  options?: OptionSelection[]; // ✅ ใช้ options เท่านั้น
+  options?: OptionSelection[];
 }
-
 
 interface CartContextType {
   cartItems: CartItem[];
@@ -29,7 +28,9 @@ interface CartContextType {
   addToCart: (item: CartItem) => void;
   removeFromCart: (cart_id: string) => void;
   updateQuantity: (cart_id: string, quantity: number) => void;
+  updateNote: (cart_id: string, note: string) => void;
   getTotalQuantity: () => number;
+  clearCart: () => void; // ✅ เพิ่ม clearCart เข้าไป
 }
 
 export const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -59,7 +60,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cartItems)); // ✅ อัปเดต localStorage ทุกครั้งที่ cartItems เปลี่ยน
+    localStorage.setItem("cart", JSON.stringify(cartItems));
   }, [cartItems]);
 
   const generateCartId = (item: CartItem) => {
@@ -71,18 +72,17 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           }))
         )
       : "";
-    return `${item.item_id}-${optionsString}-${item.note || ""}`;
+    return `${item.item_id}-${optionsString}`;
   };
 
   const addToCart = (item: CartItem) => {
+    console.log("📌 กำลังเพิ่มสินค้าเข้า Cart:", item); // เช็กว่ามี shop_name มั้ย
     const cart_id = generateCartId(item);
 
     setCartItems(prevItems => {
       if (prevItems.length > 0 && prevItems[0].shop_id !== item.shop_id) {
-        console.log("🛒 ร้านค้าเปลี่ยนจาก", prevItems[0].shop_id, "เป็น", item.shop_id, "ล้างตะกร้า!");
-        const newCart = [{ ...item, cart_id }];
-        localStorage.setItem("cart", JSON.stringify(newCart)); // ✅ อัปเดต localStorage ทันทีเมื่อร้านค้าเปลี่ยน
-        return newCart;
+        console.log("🛒 ร้านค้าเปลี่ยน ล้างตะกร้า!");
+        return [{ ...item, cart_id }];
       }
 
       const existingItem = prevItems.find(cartItem => cartItem.cart_id === cart_id);
@@ -90,7 +90,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       if (existingItem) {
         return prevItems.map(cartItem =>
           cartItem.cart_id === cart_id
-            ? { ...cartItem, quantity: cartItem.quantity + item.quantity }
+            ? { ...cartItem, quantity: cartItem.quantity + item.quantity, note: item.note }
             : cartItem
         );
       }
@@ -102,16 +102,20 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const removeFromCart = (cart_id: string) => {
     setCartItems(prevItems => {
       const updatedCart = prevItems.filter(item => item.cart_id !== cart_id);
-      localStorage.setItem("cart", JSON.stringify(updatedCart)); // ✅ อัปเดต localStorage หลังลบสินค้า
+      localStorage.setItem("cart", JSON.stringify(updatedCart));
       return updatedCart;
     });
   };
 
   const updateQuantity = (cart_id: string, quantity: number) => {
     setCartItems(prevItems =>
-      prevItems.map(item =>
-        item.cart_id === cart_id ? { ...item, quantity } : item
-      )
+      prevItems.map(item => (item.cart_id === cart_id ? { ...item, quantity } : item))
+    );
+  };
+
+  const updateNote = (cart_id: string, note: string) => {
+    setCartItems(prevItems =>
+      prevItems.map(item => (item.cart_id === cart_id ? { ...item, note } : item))
     );
   };
 
@@ -119,8 +123,24 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
   };
 
+  const clearCart = () => {
+    setCartItems([]); // เคลียร์ตะกร้าใน State
+    localStorage.removeItem("cart"); // ลบข้อมูลใน Local Storage
+  };
+
   return (
-    <CartContext.Provider value={{ cartItems, setCartItems, addToCart, removeFromCart, updateQuantity, getTotalQuantity }}>
+    <CartContext.Provider
+      value={{
+        cartItems,
+        setCartItems,
+        addToCart,
+        removeFromCart,
+        updateQuantity,
+        updateNote,
+        getTotalQuantity,
+        clearCart, // ✅ TypeScript จะไม่ Error อีกต่อไป
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

@@ -17,6 +17,7 @@
         "name": "next"
       }
     ],
+    "typeRoots": ["./node_modules/@types", "./types"],  // เพิ่มบรรทัดนี้ที่นี่
     "paths": {
       "@/*": ["./src/*"]
     }

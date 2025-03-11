@@ -1,14 +1,10 @@
-//app /edit
 "use client";
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import Swal from "sweetalert2"; // นำเข้า SweetAlert2
 import { Button } from "@/components/ui/button";
-import { User, Phone, Lock } from "lucide-react";
+import { Camera, Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
-import { ArrowLeft, Camera, Eye, EyeOff, Loader2, CheckCircle, XCircle } from "lucide-react";
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -21,8 +17,10 @@ export default function EditProfilePage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [avatarOptions, setAvatarOptions] = useState<string[]>([]);
 
   useEffect(() => {
+    // โหลดข้อมูลผู้ใช้
     const token = localStorage.getItem("token");
 
     fetch("/api/edit", {
@@ -35,16 +33,36 @@ export default function EditProfilePage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.error) {
-          toast.error(<><XCircle size={20} className="inline-block mr-2" /> โหลดข้อมูลไม่สำเร็จ</>);
+          Swal.fire({
+            icon: 'error',
+            title: 'โหลดข้อมูลไม่สำเร็จ',
+            text: 'ไม่สามารถโหลดข้อมูลได้',
+          });
         } else {
           setUser(data);
         }
-        setLoading(false);
       })
       .catch(() => {
-        toast.error(<><XCircle size={20} className="inline-block mr-2" /> ไม่สามารถโหลดข้อมูลได้</>);
-        setLoading(false);
-      });
+        Swal.fire({
+          icon: 'error',
+          title: 'ไม่สามารถโหลดข้อมูลได้',
+          text: 'เกิดข้อผิดพลาดในการโหลดข้อมูล',
+        });
+      })
+      .finally(() => setLoading(false));
+
+    // โหลดอวาตาร์ทั้งหมดจากโฟลเดอร์ Avatars
+    setAvatarOptions([
+      "/images/Avatars/avataaars1.png",
+      "/images/Avatars/avataaars2.png",
+      "/images/Avatars/avataaars3.png",
+      "/images/Avatars/avataaars4.png",
+      "/images/Avatars/avataaars5.png",
+      "/images/Avatars/avataaars6.png",
+      "/images/Avatars/avataaars7.png",
+      "/images/Avatars/avataaars8.png",
+      "/images/Avatars/avataaars9.png",
+    ]);
   }, []);
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -69,10 +87,18 @@ export default function EditProfilePage() {
 
     const data = await res.json();
     if (res.ok) {
-      toast.success(<><CheckCircle size={20} className="inline-block mr-2" /> อัปเดตข้อมูลสำเร็จ</>);
+      Swal.fire({
+        icon: 'success',
+        title: 'อัปเดตข้อมูลสำเร็จ',
+        text: 'ข้อมูลของคุณได้รับการอัปเดตแล้ว',
+      });
       setTimeout(() => router.push("/home"), 2000);
     } else {
-      toast.error(<><XCircle size={20} className="inline-block mr-2" /> {data.error}</>);
+      Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด',
+        text: data.error,
+      });
     }
 
     setUpdating(false);
@@ -80,7 +106,6 @@ export default function EditProfilePage() {
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-50 p-6">
-      <ToastContainer position="top-center" autoClose={2500} hideProgressBar />
       {updating && (
         <div className="fixed inset-0 flex flex-col items-center justify-center bg-white bg-opacity-80 z-50">
           <Loader2 className="w-12 h-12 text-yellow-400 animate-spin" />
@@ -125,19 +150,46 @@ export default function EditProfilePage() {
                     if (data.path) {
                       setUser((prev) => ({ ...prev, image: data.path }));
                     } else {
-                      toast.error(<><XCircle size={20} className="inline-block mr-2" /> อัปโหลดรูปไม่สำเร็จ</>);
+                      Swal.fire({
+                        icon: 'error',
+                        title: 'อัปโหลดรูปไม่สำเร็จ',
+                        text: 'ไม่สามารถอัปโหลดรูปได้',
+                      });
                     }
                   })
                   .catch(() => {
-                    toast.error(<><XCircle size={20} className="inline-block mr-2" /> เกิดข้อผิดพลาดในการอัปโหลด</>);
+                    Swal.fire({
+                      icon: 'error',
+                      title: 'เกิดข้อผิดพลาดในการอัปโหลด',
+                      text: 'กรุณาลองใหม่อีกครั้ง',
+                    });
                   });
               }}
             />
-            <Camera
-              className="absolute bottom-1 right-1 bg-gray-200 p-1 rounded-full shadow-md"
-              size={20}
-            />
+            <Camera className="absolute bottom-1 right-1 bg-gray-200 p-1 rounded-full shadow-md" size={20} />
           </label>
+        </div>
+
+        {/* ส่วนเลือกอวาตาร์น่ารัก */}
+        <div className="mt-4">
+          <h2 className="text-xl font-semibold text-gray-800 text-center">เลือกอวาตาร์</h2>
+          <div className="grid grid-cols-3 gap-4 mt-2">
+            {avatarOptions.map((avatar, index) => (
+              <div
+                key={index}
+                className="relative cursor-pointer"
+                onClick={() => setUser((prev) => ({ ...prev, image: avatar }))}
+              >
+                <Image
+                  src={avatar}
+                  alt={`Avatar ${index + 1}`}
+                  width={96}
+                  height={96}
+                  className="w-24 h-24 rounded-full object-cover border-4 border-blue-300 shadow-md"
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* ฟอร์มแก้ไขข้อมูล */}

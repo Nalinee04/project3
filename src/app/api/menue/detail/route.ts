@@ -1,4 +1,3 @@
-//app/menue/detail/route.ts
 import { NextResponse } from "next/server";
 import connection from "@/lib/db";
 import { RowDataPacket } from "mysql2";
@@ -13,6 +12,7 @@ interface Menu extends RowDataPacket {
   status: number;
   created_at: string;
   menu_image: string;
+  shop_name: string; // ✅ เพิ่ม shop_name
 }
 
 interface OptionGroup extends RowDataPacket {
@@ -39,15 +39,21 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "No menu_id provided" }, { status: 400 });
     }
 
-    // 1️⃣ ดึงข้อมูลเมนูจากฐานข้อมูล
-    const menuQuery = "SELECT * FROM menus WHERE menu_id = ?";
+    // 1️⃣ ดึงข้อมูลเมนูจากฐานข้อมูล (รวม shop_name)
+    const menuQuery = `
+      SELECT m.*, s.shop_name 
+      FROM menus m
+      JOIN shops s ON m.shop_id = s.shop_id
+      WHERE m.menu_id = ?`;
+
     const [menuResults]: [Menu[], any] = await connection.query(menuQuery, [menu_id]);
 
     if (menuResults.length === 0) {
       return NextResponse.json({ error: "Menu not found" }, { status: 404 });
     }
 
-    const menu = menuResults[0];
+    const menu = menuResults[0]; // ✅ menu จะมี shop_name ด้วย
+    console.log("📌 ค่าของ menu:", menu);
 
     // 2️⃣ ดึงเฉพาะ option groups ที่เกี่ยวข้องกับเมนูนี้
     const groupQuery = `
@@ -94,7 +100,7 @@ export async function GET(request: Request) {
     }, { status: 200 });
 
   } catch (error: any) {
-    console.error("Error in GET /api/menu/detail:", error);
+    console.error("❌ Error in GET /api/menu/detail:", error);
     return NextResponse.json({ error: "Server error: " + error.message }, { status: 500 });
   }
 }

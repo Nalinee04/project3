@@ -1,4 +1,4 @@
-//res/order
+// res/order
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -15,6 +15,10 @@ interface Order {
   customer_name: string;
   status: string;
   created_at: string;
+  totalAmount?: number | null;
+  deliveryTime?: string | null;
+  slip?: string | null;
+  out_of_stock_action?: string | null;
 }
 
 const Orders = () => {
@@ -36,7 +40,17 @@ const Orders = () => {
       if (!res.ok) throw new Error(`Error ${res.status}: ${await res.text()}`);
 
       const data: Order[] = await res.json();
-      setOrders(data);
+
+      // ตรวจสอบและกำหนดค่า null ให้ฟิลด์ที่อาจไม่มีข้อมูล
+      const formattedData = data.map((order) => ({
+        ...order,
+        totalAmount: order.totalAmount ?? null,
+        deliveryTime: order.deliveryTime ?? null,
+        slip: order.slip ?? null,
+        out_of_stock_action: order.out_of_stock_action ?? null,
+      }));
+
+      setOrders(formattedData);
       setLoading(false);
     } catch (error) {
       console.error("❌ Error fetching orders:", error);
@@ -48,13 +62,26 @@ const Orders = () => {
   const handleOrderAction = async (orderId: number, action: string) => {
     if (!session?.accessToken) return;
     try {
+      const body: any = { action };
+
+      // เพิ่มข้อมูลเฉพาะที่มีค่า
+      if (orders.find((order) => order.order_id === orderId)) {
+        const order = orders.find((order) => order.order_id === orderId);
+
+        if (order?.totalAmount != null) body.totalAmount = order.totalAmount;
+        if (order?.deliveryTime != null) body.deliveryTime = order.deliveryTime;
+        if (order?.slip != null) body.slip = order.slip;
+        if (order?.out_of_stock_action != null)
+          body.out_of_stock_action = order.out_of_stock_action;
+      }
+
       const res = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${session.accessToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) throw new Error(`Error ${res.status}: ${await res.text()}`);
@@ -105,9 +132,11 @@ const Orders = () => {
                     <td className="px-6 py-3">{order.customer_name}</td>
                     <td className="px-6 py-3">
                       <span
-                        className={`inline-block px-2 py-1 rounded-full ${order.status === "รอดำเนินการ"
-                          ? "bg-yellow-500 text-white"
-                          : "bg-green-500 text-white"}`}
+                        className={`inline-block px-2 py-1 rounded-full ${
+                          order.status === "รอดำเนินการ"
+                            ? "bg-yellow-500 text-white"
+                            : "bg-green-500 text-white"
+                        }`}
                       >
                         {order.status}
                       </span>

@@ -30,7 +30,7 @@ const BottomNav = () => {
   const [openSheet, setOpenSheet] = useState(false); // state สำหรับการเปิด Sheet
 
   // กำหนดว่าหน้าไหนที่ต้องการให้ BottomNav แสดง
-  const visiblePaths = ["/home", "/cart", "/history"];
+  const visiblePaths = ["/home", "/cart", "/order","/success","/his"];
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -98,11 +98,11 @@ const BottomNav = () => {
         </Link>
 
         <Link
-          href="/history"
-          className={`flex flex-col items-center ${pathname === "/history" ? "text-black" : "text-gray-500"}`}
+          href="/order"
+          className={`flex flex-col items-center ${pathname === "/order" ? "text-black" : "text-gray-500"}`}
         >
           <FaHistory size={24} />
-          <span className="text-sm">ประวัติ</span>
+          <span className="text-sm">รายการ</span>
         </Link>
         <Sheet open={openSheet} onOpenChange={setOpenSheet}> {/* ทำให้ Sheet สามารถเปิดและปิดได้ */}
           <SheetTrigger className="flex flex-col items-center text-gray-500">

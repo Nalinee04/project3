@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2"; // ✅ นำเข้า SweetAlert2
 import Image from "next/image";
+import { useUser } from "../../components/Usercontext"; // เปลี่ยน path ตามจริง
 import { useCart } from "../../components/CartContext";
 
 import { QrCode } from "lucide-react";
@@ -18,46 +19,43 @@ interface CartItem {
   quantity: number;
   shop_id: string;
   menu_image: string;
+  shop_name: string;  // ✅ เพิ่ม shop_name
   item_name?: string;
-  note?: string;
   options?: OptionSelection[]; // ✅ ใช้ options เท่านั้น
 }
 
 // กำหนดประเภท OptionSelection ให้แน่ใจว่า group_id เป็น number
 interface OptionSelection {
   option_name: string;
-  group_id: number;  // กำหนดเป็น number
+  group_id: number; // กำหนดเป็น number
   selected_items: string[];
 }
 
 const ConfirmationPage = () => {
   const router = useRouter();
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
-  const [restaurantNote, setRestaurantNote] = useState<string>(""); // เพิ่มการตั้งค่า note
   const [userName, setUserName] = useState<string | null>(null);
-  const [shopId, setShopId] = useState<string | null>(null);
-  const [deliveryType, setDeliveryType] = useState(""); // ทำให้เริ่มต้นเป็นค่าว่าง
 
+  const [shopId, setShopId] = useState<string | null>(null);
+  const [phone, setPhone] = useState<string | null>(null);
+  const [deliveryType, setDeliveryType] = useState(""); // ทำให้เริ่มต้นเป็นค่าว่าง
+  const { user } = useUser(); // ✅ ดึงข้อมูล user
   const [outOfStockAction, setOutOfStockAction] = useState(""); // ทำให้เริ่มต้นเป็นค่าว่าง
 
   const [paymentMethod, setPaymentMethod] = useState(""); // ทำให้เริ่มต้นเป็นค่าว่าง
   const { cartItems, setCartItems } = useCart(); // ✅ เพิ่ม setCartItems ให้ใช้งานได้
-  const shopIdFromCart = cartItems.length > 0 ? cartItems[0].shop_id : null;
+const shopName = cartItems.length > 0 ? cartItems[0].shop_name : "";
 
-  // ดึงค่า note จาก localStorage เมื่อคอมโพเนนต์โหลด
-  useEffect(() => {
-    const savedNote = localStorage.getItem("orderNote");
-    if (savedNote) {
-      setRestaurantNote(savedNote); // ตั้งค่าที่ดึงมาใน state
-      console.log("Note from localStorage:", savedNote); // ลองตรวจสอบค่าที่ดึงมา
-    }
-  }, []); // ดึงค่าเพียงครั้งเดียวเมื่อคอมโพเนนต์ถูกโหลด
+  const shopIdFromCart = cartItems.length > 0 ? cartItems[0].shop_id : null;
 
   const isOrderValid =
     cartItems.length > 0 &&
     deliveryType !== "" &&
     paymentMethod !== "" &&
     outOfStockAction !== "";
+
+  console.log("🛒 Cart Items:", cartItems);
+  console.log("✅ isOrderValid:", isOrderValid);
 
   const showConfirmAlert = () => {
     Swal.fire({
@@ -80,45 +78,49 @@ const ConfirmationPage = () => {
       }
     });
   };
+
   interface OptionSelection {
     option_name: string;
     group_id: number;
     selected_items: number[]; // เปลี่ยนเป็น number[]
   }
-  
 
-// ฟังก์ชันการอัปเดตตัวเลือกในตะกร้า
-const handleOptionChange = (option: OptionSelection, cartId: string) => {
-  // ค้นหาสินค้าในตะกร้าที่ต้องการอัปเดต
-  const updatedCart = cartItems.map((item) => {
-    if (item.cart_id === cartId) {
-      // อัปเดตข้อมูล options
-      item.options = [...(item.options || []), option];
-    }
-    return item;
-  });
+  // ฟังก์ชันการอัปเดตตัวเลือกในตะกร้า
+  const handleOptionChange = (option: OptionSelection, cartId: string) => {
+    // ค้นหาสินค้าในตะกร้าที่ต้องการอัปเดต
+    const updatedCart = cartItems.map((item) => {
+      if (item.cart_id === cartId) {
+        // อัปเดตข้อมูล options
+        item.options = [...(item.options || []), option];
+      }
+      return item;
+    });
 
-  setCartItems(updatedCart);
+    setCartItems(updatedCart);
 
-  // บันทึกข้อมูลที่อัปเดตลงใน localStorage
-  localStorage.setItem("cartItems", JSON.stringify(updatedCart));
-};
+    // บันทึกข้อมูลที่อัปเดตลงใน localStorage
+    localStorage.setItem("cartItems", JSON.stringify(updatedCart));
+  };
 
-
-  const savedNote = localStorage.getItem("orderNote");
-  if (savedNote) {
-    console.log("Note from localStorage:", savedNote);
-    // ใช้ savedNote ในหน้า QR หรือหน้า confirm
-  }
+  useEffect(() => {
+    const storedUserName = localStorage.getItem("userName");
+    const storedPhone = localStorage.getItem("phoneNumber");
+    if (storedUserName) setUserName(storedUserName);
+    if (storedPhone) setPhone(storedPhone);
+    console.log("👤 User Name:", storedUserName);
+    console.log("📞 Phone:", storedPhone);
+  }, []);
 
   useEffect(() => {
     if (!shopId && cartItems.length > 0) {
       setShopId(cartItems[0].shop_id);
+      console.log("🏪 Shop ID set:", cartItems[0].shop_id);
     }
   }, [cartItems, shopId]);
 
   useEffect(() => {
     if (orderStatus) {
+      console.log("📦 Order Status Updated:", orderStatus);
       Swal.fire({
         title: "สถานะคำสั่งซื้อ",
         text: `สถานะปัจจุบัน: ${orderStatus}`,
@@ -130,34 +132,71 @@ const handleOptionChange = (option: OptionSelection, cartId: string) => {
     }
   }, [orderStatus]); // ✅ Syntax ถูกต้องแล้ว
 
-  const handleSubmitOrder = async () => {
+ 
+  const handleSubmitOrder = () => {
+    console.log("📝 Checking required fields before sending order...");
+    
+    // ดึง Token จาก localStorage
+    const token = localStorage.getItem("token");
+    if (!token) {
+      Swal.fire("เกิดข้อผิดพลาด", "กรุณาเข้าสู่ระบบก่อนทำรายการ", "error");
+      return;
+    }
+  
+    // ตรวจสอบว่าในตะกร้ามีสินค้าหรือไม่
     if (!cartItems || cartItems.length === 0) {
       Swal.fire("เกิดข้อผิดพลาด", "ไม่มีสินค้าในตะกร้า", "error");
       return;
     }
-
-    if (
-      deliveryType === "" ||
-      paymentMethod === "" ||
-      outOfStockAction === ""
-    ) {
+  
+    // ตรวจสอบการเลือกตัวเลือกต่างๆ
+    if (deliveryType === "" || paymentMethod === "" || outOfStockAction === "") {
       Swal.fire("เกิดข้อผิดพลาด", "กรุณาเลือกทุกตัวเลือก", "error");
       return;
     }
+    // ดึงชื่อร้านจากสินค้าในตะกร้า (สมมติว่าทุกรายการมาจากร้านเดียวกัน)
+    const shopName = cartItems.length > 0 ? cartItems[0].shop_name : "";
 
-    // เก็บ restaurantNote ลงใน localStorage
-    localStorage.setItem("orderNote", restaurantNote);
-
-    const totalAmount = cartItems.reduce(
-      (total, item) => total + item.price,
-      0
-    );
-
-    const qrUrl = `/qr?shop_id=${shopId}&amount=${totalAmount}`;
-    console.log("Redirecting to:", qrUrl);
+    // คำนวณ totalAmount
+    const totalAmount = cartItems.reduce((total, item) => total + item.price, 0);
+  
+    // สร้างข้อมูลคำสั่งซื้อ (ส่งแค่ข้อมูลไปที่หน้า QR)
+    const orderData = {
+      customer_name: userName,
+      customer_phone: phone,
+      shop_id: shopId,
+      deliveryType, // ตรวจสอบให้ส่งค่านี้
+      paymentMethod, // ตรวจสอบให้ส่งค่านี้
+      out_of_stock_action: outOfStockAction, // ตรวจสอบให้ส่งค่านี้
+      items: cartItems.map((item) => ({
+        cart_id: item.cart_id,
+        item_id: item.item_id,
+        
+        menu_name: item.menu_name,
+        menu_image: item.menu_image,
+        price: item.price,
+        quantity: item.quantity,
+        shop_id: item.shop_id,
+        note: item.note || "",
+        options: item.options || [],
+      })),
+      totalAmount,
+    };
+  
+    console.log("📤 Sending Order Data:", orderData);
+  
+    // คำนวณ URL สำหรับไปยังหน้า QR
+    const qrUrl = `/qr?shop_id=${shopId}&shop_name=${encodeURIComponent(shopName)}&amount=${totalAmount}&orderId=${Math.random().toString(36).substring(7)}&deliveryType=${deliveryType}&paymentMethod=${paymentMethod}&outOfStockAction=${outOfStockAction}`;
+  
+    // เปลี่ยนไปยังหน้า QR
     router.push(qrUrl);
+  
+    Swal.fire("สำเร็จ!", "คำสั่งซื้อถูกส่งแล้ว", "success");
   };
+  
+  
 
+  
   const handleRemoveItem = (cartId: string) => {
     if (!cartItems) return;
 
@@ -223,7 +262,7 @@ const handleOptionChange = (option: OptionSelection, cartId: string) => {
               </div>
 
               <div className="flex-1">
-                <p className="font-semibold">{item.menu_name}</p>
+                <p className="font-normal">{item.menu_name}</p>
 
                 {/* แสดงหมายเหตุของลูกค้า ถ้ามี */}
                 {item.note && (
@@ -231,15 +270,28 @@ const handleOptionChange = (option: OptionSelection, cartId: string) => {
                 )}
               </div>
 
-              <div className="flex items-center gap-2 mt-2">
+              {/* ปุ่มแก้ไข  */}
+              <div className="flex justify-end gap-2 mt-1">
                 <button
                   className="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
-                  onClick={() => router.push(`/detail?menu_id=${item.item_id}`)}
+                  onClick={() =>
+                    router.push(
+                      `/detail?menu_id=${
+                        item.item_id
+                      }&menu_name=${encodeURIComponent(
+                        item.menu_name
+                      )}&quantity=${item.quantity}&note=${encodeURIComponent(
+                        item.note || ""
+                      )}`
+                    )
+                  }
                 >
                   แก้ไข
                 </button>
+
+                {/* ปุ่มลบ */}
                 <button
-                  className="bg-red-500 text-white px-3 py-1 rounded text-sm ml-4"
+                  className="bg-red-500 text-white px-3 py-1 rounded text-sm"
                   onClick={() => handleRemoveItem(item.cart_id)}
                 >
                   ลบ
@@ -321,17 +373,24 @@ const handleOptionChange = (option: OptionSelection, cartId: string) => {
       <div className="mt-4 p-4 bg-white rounded-lg shadow-md">
         <h3 className="text-md font-semibold">วิธีดำเนินการกรณีของหมด</h3>
         <select
-          className="mt-2 p-2 border rounded w-full"
-          value={outOfStockAction}
-          onChange={(e) => setOutOfStockAction(e.target.value)}
-        >
-          <option value="ติดต่อฉันเพื่อหาสินค้าแทน">
-            ติดต่อฉันเพื่อหาสินค้าแทน
-          </option>
-          <option value="ยกเลิกรายการนี้หากของหมด">
-            ยกเลิกรายการนี้หากของหมด
-          </option>
-        </select>
+  className="mt-2 p-2 border rounded w-full"
+  value={outOfStockAction}
+  onChange={(e) => {
+    setOutOfStockAction(e.target.value);
+    console.log("🛑 out_of_stock_action updated:", e.target.value);
+  }}
+>
+  <option value="" disabled hidden>
+    เลือก
+  </option>
+  <option value="ติดต่อฉันเพื่อหาสินค้าแทน">
+    ติดต่อฉันเพื่อหาสินค้าแทน
+  </option>
+  <option value="ยกเลิกรายการนี้หากของหมด">
+    ยกเลิกรายการนี้หากของหมด
+  </option>
+</select>
+
       </div>
 
       <div className="fixed bottom-0 left-0 w-full bg-white shadow-md p-4">
